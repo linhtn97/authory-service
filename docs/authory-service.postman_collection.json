@@ -10,36 +10,6 @@
         {
           "name": "Get Page",
           "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/attributes",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "attributes"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Page",
-          "request": {
             "method": "POST",
             "header": [
               {
@@ -366,7 +336,7 @@
           "response": []
         },
         {
-          "name": "Get Access Principal",
+          "name": "Get Principal Profile",
           "request": {
             "method": "GET",
             "header": [
@@ -382,7 +352,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/auth/access-principal",
+              "raw": "{{baseUrl}}/api/v1/auth/principal/profile",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -390,7 +360,8 @@
                 "api",
                 "v1",
                 "auth",
-                "access-principal"
+                "principal",
+                "profile"
               ]
             }
           },
@@ -413,7 +384,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/auth/access-principal/authorities",
+              "raw": "{{baseUrl}}/api/v1/auth/principal/authorities",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -421,7 +392,7 @@
                 "api",
                 "v1",
                 "auth",
-                "access-principal",
+                "principal",
                 "authorities"
               ]
             }
@@ -500,36 +471,6 @@
     {
       "name": "Branch",
       "item": [
-        {
-          "name": "Get Page",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/branches",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "branches"
-              ]
-            }
-          },
-          "response": []
-        },
         {
           "name": "Get Page",
           "request": {
@@ -719,36 +660,6 @@
         {
           "name": "Get Page",
           "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/centers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "centers"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Page",
-          "request": {
             "method": "POST",
             "header": [
               {
@@ -932,36 +843,6 @@
     {
       "name": "Company",
       "item": [
-        {
-          "name": "Get Page",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/companies",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "companies"
-              ]
-            }
-          },
-          "response": []
-        },
         {
           "name": "Get Page",
           "request": {
@@ -1151,36 +1032,6 @@
         {
           "name": "Get Page",
           "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/departments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "departments"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Page",
-          "request": {
             "method": "POST",
             "header": [
               {
@@ -1364,36 +1215,6 @@
     {
       "name": "Division",
       "item": [
-        {
-          "name": "Get Page",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/divisions",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "divisions"
-              ]
-            }
-          },
-          "response": []
-        },
         {
           "name": "Get Page",
           "request": {
@@ -1583,36 +1404,6 @@
         {
           "name": "Get Page",
           "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/positions",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "positions"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Page",
-          "request": {
             "method": "POST",
             "header": [
               {
@@ -1796,36 +1587,6 @@
     {
       "name": "Group",
       "item": [
-        {
-          "name": "Get Page",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/groups",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "groups"
-              ]
-            }
-          },
-          "response": []
-        },
         {
           "name": "Get Page",
           "request": {
@@ -2168,36 +1929,6 @@
         {
           "name": "Get Page",
           "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/permissions",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "permissions"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Page",
-          "request": {
             "method": "POST",
             "header": [
               {
@@ -2381,36 +2112,6 @@
     {
       "name": "Resource",
       "item": [
-        {
-          "name": "Get Page",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/resources",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "resources"
-              ]
-            }
-          },
-          "response": []
-        },
         {
           "name": "Get Page",
           "request": {
@@ -2750,36 +2451,6 @@
     {
       "name": "Role",
       "item": [
-        {
-          "name": "Get Page",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/roles",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "roles"
-              ]
-            }
-          },
-          "response": []
-        },
         {
           "name": "Get Page",
           "request": {
@@ -3578,36 +3249,6 @@
     {
       "name": "User",
       "item": [
-        {
-          "name": "Get Page",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "users"
-              ]
-            }
-          },
-          "response": []
-        },
         {
           "name": "Get Page",
           "request": {
