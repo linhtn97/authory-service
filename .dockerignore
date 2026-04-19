@@ -1,0 +1,28 @@
+# Ignore Gradle build output
+build/
+.gradle/
+!build/libs/*.jar  # allow the final jar if needed directly
+
+# Ignore logs
+*.log
+
+# Ignore IDE/editor configs
+.idea/
+*.iml
+*.sw?
+*.vscode/
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore Git
+.git/
+.gitignore
+
+# Ignore test resources
+src/test/
+
+# Docker files
+Dockerfile
+.dockerignore

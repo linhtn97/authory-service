@@ -1,0 +1,12 @@
+package com.linhtn.authory_service.modules.user.domain.mapper;
+
+import com.linhtn.authory_service.config.auditor.AuditMapperConfig;
+import com.linhtn.authory_service.modules.user.domain.dto.CustomerDto;
+import com.linhtn.authory_service.modules.user.domain.entity.Customer;
+import com.linhtn.shared_kernel.domain.mapper.BaseMapper;
+import org.mapstruct.Mapper;
+
+@Mapper(componentModel = "spring", config = AuditMapperConfig.class)
+public abstract class CustomerMapper implements BaseMapper<Customer, CustomerDto> {
+    
+}
