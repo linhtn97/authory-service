@@ -8,11 +8,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -33,11 +28,15 @@ import com.linhtn.authory_service.modules.auth.service.PartnerAuthenticationServ
 import com.linhtn.authory_service.modules.auth.service.UserAuthenticationService;
 import com.linhtn.shared_kernel.representation.api.ApiErrorResponse;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import tools.jackson.databind.ObjectMapper;
 
 @Component
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
-    private static final Logger logger = LoggerFactory.getLogger(JwtAuthorizationFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthorizationFilter.class);
 
     private final I18nHelper i18nHelper;
     private final PartnerAuthenticationService partnerAuthenticationService;
@@ -111,7 +110,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                         SecurityContextHolder.getContext().setAuthentication(authToken);
                     }
                 } catch (Exception e) {
-                    logger.error(
+                    log.error(
                             "Exception during extract partner authentication: {}",
                             e.getMessage(),
                             e);
@@ -162,7 +161,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             } catch (Exception e) {
-                logger.error("Exception during token processing: {}", e.getMessage(), e);
+                log.error("Exception during token processing: {}", e.getMessage(), e);
                 setErrorResponse(e.getMessage(), request.getRequestURI(), response);
                 return;
             }
