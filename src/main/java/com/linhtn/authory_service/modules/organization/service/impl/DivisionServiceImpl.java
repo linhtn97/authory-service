@@ -1,5 +1,16 @@
 package com.linhtn.authory_service.modules.organization.service.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.linhtn.authory_service.config.i18n.I18nHelper;
 import com.linhtn.authory_service.modules.organization.domain.dto.DivisionDto;
 import com.linhtn.authory_service.modules.organization.domain.entity.Division;
@@ -14,16 +25,6 @@ import com.linhtn.shared_kernel.common.model.FieldOrder;
 import com.linhtn.shared_kernel.common.model.PagingRequest;
 import com.linhtn.shared_kernel.common.model.PagingResponse;
 import com.linhtn.shared_kernel.infrastructure.jpa.specification.GenericSpecification;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @Service
 public class DivisionServiceImpl implements DivisionService {
@@ -31,7 +32,10 @@ public class DivisionServiceImpl implements DivisionService {
     private final DivisionRepository divisionRepository;
     private final DivisionMapper divisionMapper;
 
-    public DivisionServiceImpl(I18nHelper i18nHelper, DivisionRepository divisionRepository, DivisionMapper divisionMapper) {
+    public DivisionServiceImpl(
+            I18nHelper i18nHelper,
+            DivisionRepository divisionRepository,
+            DivisionMapper divisionMapper) {
         this.i18nHelper = i18nHelper;
         this.divisionRepository = divisionRepository;
         this.divisionMapper = divisionMapper;
@@ -42,13 +46,15 @@ public class DivisionServiceImpl implements DivisionService {
         Specification<Division> specification = new GenericSpecification<>(request);
 
         List<Sort.Order> orders = new ArrayList<>();
-        request.getOrders().forEach(o -> {
-            if (o.getSort().equals(FieldOrder.SortType.asc)) {
-                orders.add(Sort.Order.asc(o.getField()));
-            } else if (o.getSort().equals(FieldOrder.SortType.desc)) {
-                orders.add(Sort.Order.desc(o.getField()));
-            }
-        });
+        request.getOrders()
+                .forEach(
+                        o -> {
+                            if (o.getSort().equals(FieldOrder.SortType.asc)) {
+                                orders.add(Sort.Order.asc(o.getField()));
+                            } else if (o.getSort().equals(FieldOrder.SortType.desc)) {
+                                orders.add(Sort.Order.desc(o.getField()));
+                            }
+                        });
         Sort sort = Sort.by(orders);
         Pageable pageable = PageRequest.of(request.getPage(), request.getPageSize(), sort);
 
@@ -59,10 +65,16 @@ public class DivisionServiceImpl implements DivisionService {
 
     @Override
     public DivisionDto get(UUID id) {
-        return divisionMapper.toDto(divisionRepository.findById(id).orElseThrow(() -> new DivisionNotFoundException(
-                DivisionError.DIVISION_NOT_FOUND.name(),
-                i18nHelper.getMessage(DivisionError.DIVISION_NOT_FOUND.getMessage())))
-        );
+        return divisionMapper.toDto(
+                divisionRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new DivisionNotFoundException(
+                                                DivisionError.DIVISION_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        DivisionError.DIVISION_NOT_FOUND
+                                                                .getMessage()))));
     }
 
     @Override
@@ -76,10 +88,15 @@ public class DivisionServiceImpl implements DivisionService {
     @Override
     @Transactional
     public DivisionDto update(UUID id, DivisionDto request) {
-        Division existDivision = divisionRepository.findById(id).orElseThrow(() -> new UserNotFoundException(
-                UserError.USER_NOT_FOUND.name(),
-                i18nHelper.getMessage(UserError.USER_NOT_FOUND.getMessage()))
-        );
+        Division existDivision =
+                divisionRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new UserNotFoundException(
+                                                UserError.USER_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        UserError.USER_NOT_FOUND.getMessage())));
         divisionMapper.fillEntity(existDivision, request);
         return divisionMapper.toDto(divisionRepository.save(existDivision));
     }
@@ -87,10 +104,15 @@ public class DivisionServiceImpl implements DivisionService {
     @Override
     @Transactional
     public void delete(UUID id) {
-        Division existDivision = divisionRepository.findById(id).orElseThrow(() -> new UserNotFoundException(
-                UserError.USER_NOT_FOUND.name(),
-                i18nHelper.getMessage(UserError.USER_NOT_FOUND.getMessage()))
-        );
+        Division existDivision =
+                divisionRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new UserNotFoundException(
+                                                UserError.USER_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        UserError.USER_NOT_FOUND.getMessage())));
         divisionRepository.delete(existDivision);
     }
 }

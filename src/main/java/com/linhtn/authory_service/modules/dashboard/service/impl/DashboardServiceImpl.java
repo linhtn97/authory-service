@@ -1,5 +1,7 @@
 package com.linhtn.authory_service.modules.dashboard.service.impl;
 
+import org.springframework.stereotype.Service;
+
 import com.linhtn.authory_service.modules.auth.repository.TokenRepository;
 import com.linhtn.authory_service.modules.dashboard.dto.DashboardMetricsResponse;
 import com.linhtn.authory_service.modules.dashboard.service.DashboardService;
@@ -8,8 +10,8 @@ import com.linhtn.authory_service.modules.rbac.repository.PermissionRepository;
 import com.linhtn.authory_service.modules.rbac.repository.ResourceRepository;
 import com.linhtn.authory_service.modules.rbac.repository.RoleRepository;
 import com.linhtn.authory_service.modules.user.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor

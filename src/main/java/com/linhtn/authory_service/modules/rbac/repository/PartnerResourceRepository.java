@@ -1,17 +1,19 @@
 package com.linhtn.authory_service.modules.rbac.repository;
 
-import com.linhtn.authory_service.modules.rbac.domain.entity.PartnerResource;
+import java.util.Set;
+import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.Set;
-import java.util.UUID;
+import com.linhtn.authory_service.modules.rbac.domain.entity.PartnerResource;
 
 @Repository
-public interface PartnerResourceRepository extends JpaRepository<PartnerResource, UUID>, JpaSpecificationExecutor<PartnerResource> {
+public interface PartnerResourceRepository
+        extends JpaRepository<PartnerResource, UUID>, JpaSpecificationExecutor<PartnerResource> {
 
     @Query("SELECT pr.resource.id FROM PartnerResource pr WHERE pr.partnerId = :partnerId")
     Set<UUID> findResourceIdsByPartnerId(UUID partnerId);
@@ -21,7 +23,8 @@ public interface PartnerResourceRepository extends JpaRepository<PartnerResource
     void deleteByPartnerId(UUID partnerId);
 
     @Modifying
-    @Query("""
+    @Query(
+            """
                 DELETE FROM PartnerResource pr
                 WHERE pr.partnerId = :partnerId
                 AND pr.resource.id IN :resourceIds

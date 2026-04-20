@@ -1,14 +1,15 @@
 package com.linhtn.shared_kernel.infrastructure.jpa.specification;
 
+import java.util.Map;
+
 import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Path;
 
-import java.util.Map;
-
 public class CriteriaPathHelper {
-    public static Path<?> getPath(From<?, ?> root, String fieldPath, Map<String, Join<?, ?>> joins, JoinType joinType) {
+    public static Path<?> getPath(
+            From<?, ?> root, String fieldPath, Map<String, Join<?, ?>> joins, JoinType joinType) {
         if (!fieldPath.contains(".")) {
             return root.get(fieldPath);
         }

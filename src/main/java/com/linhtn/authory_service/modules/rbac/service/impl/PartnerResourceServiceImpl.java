@@ -1,5 +1,12 @@
 package com.linhtn.authory_service.modules.rbac.service.impl;
 
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.linhtn.authory_service.modules.rbac.domain.dto.ResourceDto;
 import com.linhtn.authory_service.modules.rbac.domain.entity.PartnerResource;
 import com.linhtn.authory_service.modules.rbac.domain.entity.Resource;
@@ -7,12 +14,6 @@ import com.linhtn.authory_service.modules.rbac.domain.mapper.ResourceMapper;
 import com.linhtn.authory_service.modules.rbac.repository.PartnerResourceRepository;
 import com.linhtn.authory_service.modules.rbac.repository.ResourceRepository;
 import com.linhtn.authory_service.modules.rbac.service.PartnerResourceService;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 @Service
 public class PartnerResourceServiceImpl implements PartnerResourceService {
@@ -23,8 +24,8 @@ public class PartnerResourceServiceImpl implements PartnerResourceService {
 
     public PartnerResourceServiceImpl(
             PartnerResourceRepository partnerResourceRepository,
-            ResourceRepository resourceRepository, ResourceMapper resourceMapper
-    ) {
+            ResourceRepository resourceRepository,
+            ResourceMapper resourceMapper) {
         this.partnerResourceRepository = partnerResourceRepository;
         this.resourceRepository = resourceRepository;
         this.resourceMapper = resourceMapper;
@@ -36,15 +37,18 @@ public class PartnerResourceServiceImpl implements PartnerResourceService {
         partnerResourceRepository.deleteByPartnerId(partnerId);
 
         if (!resourceIds.isEmpty()) {
-            List<PartnerResource> mappings = resourceIds.stream()
-                    .map(resId -> {
-                        Resource resource = resourceRepository.getReferenceById(resId);
-                        PartnerResource pr = new PartnerResource();
-                        pr.setPartnerId(partnerId);
-                        pr.setResource(resource);
-                        return pr;
-                    })
-                    .toList();
+            List<PartnerResource> mappings =
+                    resourceIds.stream()
+                            .map(
+                                    resId -> {
+                                        Resource resource =
+                                                resourceRepository.getReferenceById(resId);
+                                        PartnerResource pr = new PartnerResource();
+                                        pr.setPartnerId(partnerId);
+                                        pr.setResource(resource);
+                                        return pr;
+                                    })
+                            .toList();
 
             partnerResourceRepository.saveAll(mappings);
         }
@@ -82,4 +86,3 @@ public class PartnerResourceServiceImpl implements PartnerResourceService {
         return resourceMapper.toDtos(resourceRepository.findAllById(resourceIds));
     }
 }
-

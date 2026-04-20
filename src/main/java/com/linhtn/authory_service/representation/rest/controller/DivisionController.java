@@ -1,11 +1,10 @@
 package com.linhtn.authory_service.representation.rest.controller;
 
-import com.linhtn.authory_service.modules.organization.domain.dto.DivisionDto;
-import com.linhtn.authory_service.modules.organization.service.DivisionService;
-import com.linhtn.shared_kernel.common.model.FieldOrder;
-import com.linhtn.shared_kernel.common.model.PagingRequest;
-import com.linhtn.shared_kernel.common.model.PagingResponse;
+import java.util.List;
+import java.util.UUID;
+
 import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -19,8 +18,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.UUID;
+import com.linhtn.authory_service.modules.organization.domain.dto.DivisionDto;
+import com.linhtn.authory_service.modules.organization.service.DivisionService;
+import com.linhtn.shared_kernel.common.model.FieldOrder;
+import com.linhtn.shared_kernel.common.model.PagingRequest;
+import com.linhtn.shared_kernel.common.model.PagingResponse;
 
 @RestController
 @RequestMapping("/api/v1/divisions")
@@ -41,19 +43,18 @@ public class DivisionController {
             @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String sortDir,
-            @RequestParam(required = false) String search
-    ) {
-        PagingRequest request = PagingRequest.builder()
-                .page(page)
-                .pageSize(pageSize)
-                .build();
+            @RequestParam(required = false) String search) {
+        PagingRequest request = PagingRequest.builder().page(page).pageSize(pageSize).build();
 
         if (sortBy != null) {
-            FieldOrder order = FieldOrder.builder()
-                    .field(sortBy)
-                    .sort(sortDir != null && sortDir.equalsIgnoreCase("desc") ?
-                            FieldOrder.SortType.desc : FieldOrder.SortType.asc)
-                    .build();
+            FieldOrder order =
+                    FieldOrder.builder()
+                            .field(sortBy)
+                            .sort(
+                                    sortDir != null && sortDir.equalsIgnoreCase("desc")
+                                            ? FieldOrder.SortType.desc
+                                            : FieldOrder.SortType.asc)
+                            .build();
             request.setOrders(List.of(order));
         }
 
@@ -66,7 +67,8 @@ public class DivisionController {
     // POST /api/v1/divisions/get-page
     // =========================
     @PostMapping("/get-page")
-    public ResponseEntity<PagingResponse<DivisionDto>> getPage(@Valid @RequestBody PagingRequest req) {
+    public ResponseEntity<PagingResponse<DivisionDto>> getPage(
+            @Valid @RequestBody PagingRequest req) {
         return ResponseEntity.ok(divisionService.getPage(req));
     }
 
@@ -90,7 +92,8 @@ public class DivisionController {
     // PUT /api/v1/divisions/{id}
     // =========================
     @PutMapping("/{id}")
-    public ResponseEntity<DivisionDto> update(@PathVariable UUID id, @Valid @RequestBody DivisionDto req) {
+    public ResponseEntity<DivisionDto> update(
+            @PathVariable UUID id, @Valid @RequestBody DivisionDto req) {
         return ResponseEntity.ok(divisionService.update(id, req));
     }
 
@@ -103,4 +106,3 @@ public class DivisionController {
         divisionService.delete(id);
     }
 }
-

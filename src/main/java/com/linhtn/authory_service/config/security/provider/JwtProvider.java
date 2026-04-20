@@ -1,27 +1,30 @@
 package com.linhtn.authory_service.config.security.provider;
 
-import com.linhtn.authory_service.config.security.config.SecurityProperties;
-import com.linhtn.authory_service.config.security.model.TokenType;
-import com.linhtn.authory_service.config.security.model.PrincipalProfile;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotEmpty;
-import org.springframework.stereotype.Component;
-
-import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 import java.util.function.Function;
 
+import javax.crypto.SecretKey;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
+
+import org.springframework.stereotype.Component;
+
+import com.linhtn.authory_service.config.security.config.SecurityProperties;
+import com.linhtn.authory_service.config.security.model.Principal;
+import com.linhtn.authory_service.config.security.model.TokenType;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+
 @Component
 public class JwtProvider {
-    @NotEmpty
-    private String secretKey;
+    @NotEmpty private String secretKey;
 
     @Min(1)
     private long accessExpiration;
@@ -40,13 +43,9 @@ public class JwtProvider {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    private String buildToken(
-            PrincipalProfile principal,
-            long expiration
-    ) {
+    private String buildToken(Principal principal, long expiration) {
         Instant now = Instant.now();
-        return Jwts
-                .builder()
+        return Jwts.builder()
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(expiration)))
                 .claim("jti", UUID.randomUUID().toString())
@@ -59,8 +58,7 @@ public class JwtProvider {
 
     private Claims extractAllClaims(String token) {
         try {
-            return Jwts
-                    .parser()
+            return Jwts.parser()
                     .verifyWith(getSignKey())
                     .build()
                     .parseSignedClaims(token)
@@ -80,8 +78,10 @@ public class JwtProvider {
         return extractExpiration(token).before(new Date());
     }
 
-    public String generateToken(PrincipalProfile principal, TokenType tokenType) {
-        return buildToken(principal, tokenType.equals(TokenType.ACCESS) ? accessExpiration : refreshExpiration);
+    public String generateToken(Principal principal, TokenType tokenType) {
+        return buildToken(
+                principal,
+                tokenType.equals(TokenType.ACCESS) ? accessExpiration : refreshExpiration);
     }
 
     public String extractUsername(String token) {

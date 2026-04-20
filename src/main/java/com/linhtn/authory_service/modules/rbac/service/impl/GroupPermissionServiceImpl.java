@@ -1,5 +1,12 @@
 package com.linhtn.authory_service.modules.rbac.service.impl;
 
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.linhtn.authory_service.modules.rbac.domain.entity.Group;
 import com.linhtn.authory_service.modules.rbac.domain.entity.GroupPermission;
 import com.linhtn.authory_service.modules.rbac.domain.entity.Permission;
@@ -7,12 +14,6 @@ import com.linhtn.authory_service.modules.rbac.repository.GroupPermissionReposit
 import com.linhtn.authory_service.modules.rbac.repository.GroupRepository;
 import com.linhtn.authory_service.modules.rbac.repository.PermissionRepository;
 import com.linhtn.authory_service.modules.rbac.service.GroupPermissionService;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 @Service
 public class GroupPermissionServiceImpl implements GroupPermissionService {
@@ -20,7 +21,10 @@ public class GroupPermissionServiceImpl implements GroupPermissionService {
     private final GroupRepository groupRepository;
     private final PermissionRepository permissionRepository;
 
-    public GroupPermissionServiceImpl(GroupPermissionRepository groupPermissionRepository, GroupRepository groupRepository, PermissionRepository permissionRepository) {
+    public GroupPermissionServiceImpl(
+            GroupPermissionRepository groupPermissionRepository,
+            GroupRepository groupRepository,
+            PermissionRepository permissionRepository) {
         this.groupPermissionRepository = groupPermissionRepository;
         this.groupRepository = groupRepository;
         this.permissionRepository = permissionRepository;
@@ -34,15 +38,18 @@ public class GroupPermissionServiceImpl implements GroupPermissionService {
         if (!permissionIds.isEmpty()) {
             Group group = groupRepository.getReferenceById(groupId);
 
-            List<GroupPermission> mappings = permissionIds.stream()
-                    .map(pid -> {
-                        Permission perm = permissionRepository.getReferenceById(pid);
-                        GroupPermission gp = new GroupPermission();
-                        gp.setGroup(group);
-                        gp.setPermission(perm);
-                        return gp;
-                    })
-                    .toList();
+            List<GroupPermission> mappings =
+                    permissionIds.stream()
+                            .map(
+                                    pid -> {
+                                        Permission perm =
+                                                permissionRepository.getReferenceById(pid);
+                                        GroupPermission gp = new GroupPermission();
+                                        gp.setGroup(group);
+                                        gp.setPermission(perm);
+                                        return gp;
+                                    })
+                            .toList();
 
             groupPermissionRepository.saveAll(mappings);
         }

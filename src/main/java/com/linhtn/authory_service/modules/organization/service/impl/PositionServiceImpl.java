@@ -1,5 +1,16 @@
 package com.linhtn.authory_service.modules.organization.service.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.linhtn.authory_service.config.i18n.I18nHelper;
 import com.linhtn.authory_service.modules.organization.domain.dto.PositionDto;
 import com.linhtn.authory_service.modules.organization.domain.entity.Position;
@@ -14,16 +25,6 @@ import com.linhtn.shared_kernel.common.model.FieldOrder;
 import com.linhtn.shared_kernel.common.model.PagingRequest;
 import com.linhtn.shared_kernel.common.model.PagingResponse;
 import com.linhtn.shared_kernel.infrastructure.jpa.specification.GenericSpecification;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @Service
 public class PositionServiceImpl implements PositionService {
@@ -31,7 +32,10 @@ public class PositionServiceImpl implements PositionService {
     private final PositionRepository positionRepository;
     private final PositionMapper positionMapper;
 
-    public PositionServiceImpl(I18nHelper i18nHelper, PositionRepository positionRepository, PositionMapper positionMapper) {
+    public PositionServiceImpl(
+            I18nHelper i18nHelper,
+            PositionRepository positionRepository,
+            PositionMapper positionMapper) {
         this.i18nHelper = i18nHelper;
         this.positionRepository = positionRepository;
         this.positionMapper = positionMapper;
@@ -42,13 +46,15 @@ public class PositionServiceImpl implements PositionService {
         Specification<Position> specification = new GenericSpecification<>(request);
 
         List<Sort.Order> orders = new ArrayList<>();
-        request.getOrders().forEach(o -> {
-            if (o.getSort().equals(FieldOrder.SortType.asc)) {
-                orders.add(Sort.Order.asc(o.getField()));
-            } else if (o.getSort().equals(FieldOrder.SortType.desc)) {
-                orders.add(Sort.Order.desc(o.getField()));
-            }
-        });
+        request.getOrders()
+                .forEach(
+                        o -> {
+                            if (o.getSort().equals(FieldOrder.SortType.asc)) {
+                                orders.add(Sort.Order.asc(o.getField()));
+                            } else if (o.getSort().equals(FieldOrder.SortType.desc)) {
+                                orders.add(Sort.Order.desc(o.getField()));
+                            }
+                        });
         Sort sort = Sort.by(orders);
         Pageable pageable = PageRequest.of(request.getPage(), request.getPageSize(), sort);
 
@@ -59,10 +65,16 @@ public class PositionServiceImpl implements PositionService {
 
     @Override
     public PositionDto get(UUID id) {
-        return positionMapper.toDto(positionRepository.findById(id).orElseThrow(() -> new PositionNotFoundException(
-                PositionError.POSITION_NOT_FOUND.name(),
-                i18nHelper.getMessage(PositionError.POSITION_NOT_FOUND.getMessage())))
-        );
+        return positionMapper.toDto(
+                positionRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new PositionNotFoundException(
+                                                PositionError.POSITION_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        PositionError.POSITION_NOT_FOUND
+                                                                .getMessage()))));
     }
 
     @Override
@@ -76,10 +88,15 @@ public class PositionServiceImpl implements PositionService {
     @Override
     @Transactional
     public PositionDto update(UUID id, PositionDto request) {
-        Position existPosition = positionRepository.findById(id).orElseThrow(() -> new UserNotFoundException(
-                UserError.USER_NOT_FOUND.name(),
-                i18nHelper.getMessage(UserError.USER_NOT_FOUND.getMessage()))
-        );
+        Position existPosition =
+                positionRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new UserNotFoundException(
+                                                UserError.USER_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        UserError.USER_NOT_FOUND.getMessage())));
         positionMapper.fillEntity(existPosition, request);
         return positionMapper.toDto(positionRepository.save(existPosition));
     }
@@ -87,10 +104,15 @@ public class PositionServiceImpl implements PositionService {
     @Override
     @Transactional
     public void delete(UUID id) {
-        Position existPosition = positionRepository.findById(id).orElseThrow(() -> new UserNotFoundException(
-                UserError.USER_NOT_FOUND.name(),
-                i18nHelper.getMessage(UserError.USER_NOT_FOUND.getMessage()))
-        );
+        Position existPosition =
+                positionRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new UserNotFoundException(
+                                                UserError.USER_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        UserError.USER_NOT_FOUND.getMessage())));
         positionRepository.delete(existPosition);
     }
 }

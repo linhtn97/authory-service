@@ -1,14 +1,15 @@
 package com.linhtn.authory_service.modules.organization.domain.dto;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import jakarta.validation.constraints.NotBlank;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -17,10 +18,13 @@ import java.util.UUID;
 @AllArgsConstructor
 public class DivisionDto {
     private UUID id;
+
     @NotBlank(message = "error.validation.not_blank")
     private String code;
+
     @NotBlank(message = "error.validation.not_blank")
     private String name;
+
     private LocalDateTime createdAt;
     private UUID createdBy;
     private LocalDateTime updatedAt;

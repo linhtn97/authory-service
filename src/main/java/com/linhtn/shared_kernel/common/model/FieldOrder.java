@@ -16,6 +16,7 @@ public class FieldOrder {
     private SortType sort;
 
     public enum SortType {
-        asc, desc
+        asc,
+        desc
     }
 }

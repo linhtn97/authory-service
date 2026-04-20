@@ -1,5 +1,12 @@
 package com.linhtn.authory_service.modules.rbac.service.impl;
 
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.linhtn.authory_service.modules.rbac.domain.dto.GroupDto;
 import com.linhtn.authory_service.modules.rbac.domain.entity.Group;
 import com.linhtn.authory_service.modules.rbac.domain.entity.PartnerGroup;
@@ -7,12 +14,6 @@ import com.linhtn.authory_service.modules.rbac.domain.mapper.GroupMapper;
 import com.linhtn.authory_service.modules.rbac.repository.GroupRepository;
 import com.linhtn.authory_service.modules.rbac.repository.PartnerGroupRepository;
 import com.linhtn.authory_service.modules.rbac.service.PartnerGroupService;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 @Service
 public class PartnerGroupServiceImpl implements PartnerGroupService {
@@ -24,8 +25,7 @@ public class PartnerGroupServiceImpl implements PartnerGroupService {
     public PartnerGroupServiceImpl(
             PartnerGroupRepository partnerGroupRepository,
             GroupRepository groupRepository,
-            GroupMapper groupMapper
-    ) {
+            GroupMapper groupMapper) {
         this.partnerGroupRepository = partnerGroupRepository;
         this.groupRepository = groupRepository;
         this.groupMapper = groupMapper;
@@ -37,15 +37,17 @@ public class PartnerGroupServiceImpl implements PartnerGroupService {
         partnerGroupRepository.deleteByPartnerId(partnerId);
 
         if (!groupIds.isEmpty()) {
-            List<PartnerGroup> mappings = groupIds.stream()
-                    .map(gid -> {
-                        Group group = groupRepository.getReferenceById(gid);
-                        PartnerGroup pg = new PartnerGroup();
-                        pg.setPartnerId(partnerId);
-                        pg.setGroup(group);
-                        return pg;
-                    })
-                    .toList();
+            List<PartnerGroup> mappings =
+                    groupIds.stream()
+                            .map(
+                                    gid -> {
+                                        Group group = groupRepository.getReferenceById(gid);
+                                        PartnerGroup pg = new PartnerGroup();
+                                        pg.setPartnerId(partnerId);
+                                        pg.setGroup(group);
+                                        return pg;
+                                    })
+                            .toList();
 
             partnerGroupRepository.saveAll(mappings);
         }

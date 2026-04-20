@@ -4,8 +4,8 @@ import lombok.Getter;
 
 @Getter
 public enum CenterError {
-    CENTER_NOT_FOUND("error.center.not_found"),  // 404 - Not Found
-    CENTER_ALREADY_EXISTS("error.center.already_exists");  // 409 - Conflict
+    CENTER_NOT_FOUND("error.center.not_found"), // 404 - Not Found
+    CENTER_ALREADY_EXISTS("error.center.already_exists"); // 409 - Conflict
     private final String message;
 
     CenterError(String message) {

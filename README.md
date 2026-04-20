@@ -16,7 +16,7 @@ Authory Service is a comprehensive microservice built with Spring Boot 4.0.0 and
 * **Language**: Java 25
 * **Framework**: Spring Boot 4.0.0
 * **Data Access**: Spring Data JPA with PostgreSQL
-* **Security**: Spring Security & JWT 
+* **Security**: Spring Security & JWT
 * **Validation**: Spring Boot Starter Validation
 * **API Paradigm**: Spring WebMVC & WebFlux
 * **Object Mapping**: MapStruct (1.6.3)
@@ -33,7 +33,7 @@ Authory Service is a comprehensive microservice built with Spring Boot 4.0.0 and
 
 ### Configuration
 
-Ensure your `application.yaml` is configured with the correct PostgreSQL database credentials and JWT secret properties. 
+Ensure your `application.yaml` is configured with the correct PostgreSQL database credentials and JWT secret properties.
 
 ### Running Locally
 

@@ -1,8 +1,8 @@
 package com.linhtn.authory_service.config.mapper;
 
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
 import tools.jackson.databind.ObjectMapper;
 
 @Configuration

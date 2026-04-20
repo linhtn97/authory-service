@@ -1,7 +1,15 @@
 package com.linhtn.authory_service.modules.auth.service.impl;
 
-import com.linhtn.authory_service.config.security.model.PrincipalProfile;
-import com.linhtn.authory_service.config.security.model.PrincipalAuthorities;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.UUID;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.linhtn.authory_service.config.i18n.I18nHelper;
+import com.linhtn.authory_service.config.security.model.Principal;
 import com.linhtn.authory_service.config.security.model.TokenType;
 import com.linhtn.authory_service.config.security.provider.JwtProvider;
 import com.linhtn.authory_service.modules.auth.domain.dto.TokenDto;
@@ -19,14 +27,6 @@ import com.linhtn.authory_service.modules.user.domain.dto.UserDto;
 import com.linhtn.authory_service.modules.user.exception.error.UserError;
 import com.linhtn.authory_service.modules.user.exception.unchecked.UserAlreadyExistsException;
 import com.linhtn.authory_service.modules.user.service.UserService;
-import com.linhtn.authory_service.config.i18n.I18nHelper;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.UUID;
 
 @Service
 public class UserAuthenticationServiceImpl implements UserAuthenticationService {
@@ -38,8 +38,14 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
     private final JwtProvider jwtProvider;
     private final UserAuthoryService userAuthoryService;
 
-
-    public UserAuthenticationServiceImpl(I18nHelper i18nHelper, PasswordEncoder passwordEncoder, UserService userService, UserCredentialService userCredentialService, TokenService tokenService, JwtProvider jwtProvider, UserAuthoryService userAuthoryService) {
+    public UserAuthenticationServiceImpl(
+            I18nHelper i18nHelper,
+            PasswordEncoder passwordEncoder,
+            UserService userService,
+            UserCredentialService userCredentialService,
+            TokenService tokenService,
+            JwtProvider jwtProvider,
+            UserAuthoryService userAuthoryService) {
         this.i18nHelper = i18nHelper;
         this.passwordEncoder = passwordEncoder;
         this.userService = userService;
@@ -55,23 +61,24 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
         if (userService.existsByUsernameOrEmail(request.getUsername(), request.getEmail())) {
             throw new UserAlreadyExistsException(
                     UserError.USER_ALREADY_EXISTS.name(),
-                    i18nHelper.getMessage(UserError.USER_ALREADY_EXISTS.getMessage())
-            );
+                    i18nHelper.getMessage(UserError.USER_ALREADY_EXISTS.getMessage()));
         }
 
-        var newUser = UserDto.builder()
-                .email(request.getEmail())
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .username(request.getUsername())
-                .build();
+        var newUser =
+                UserDto.builder()
+                        .email(request.getEmail())
+                        .firstName(request.getFirstName())
+                        .lastName(request.getLastName())
+                        .username(request.getUsername())
+                        .build();
 
         newUser = userService.create(newUser);
 
-        var newUserCredential = UserCredentialDto.builder()
-                .userId(newUser.getId())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .build();
+        var newUserCredential =
+                UserCredentialDto.builder()
+                        .userId(newUser.getId())
+                        .password(passwordEncoder.encode(request.getPassword()))
+                        .build();
 
         userCredentialService.create(newUserCredential);
     }
@@ -81,22 +88,25 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
     public Auth login(LoginRequest request) {
         var existUser = userService.getByUsername(request.getUsername());
 
-        if (!userCredentialService.existsByUserIdAndPassword(existUser.getId(), request.getPassword())) {
+        if (!userCredentialService.existsByUserIdAndPassword(
+                existUser.getId(), request.getPassword())) {
             throw new UserCredentialInvalidException(
                     UserCredentialError.USER_CREDENTIAL_INVALID.name(),
-                    i18nHelper.getMessage(UserCredentialError.USER_CREDENTIAL_INVALID.getMessage())
-            );
+                    i18nHelper.getMessage(
+                            UserCredentialError.USER_CREDENTIAL_INVALID.getMessage()));
         }
 
         tokenService.revokeAllByUserId(existUser.getId());
 
-        var principal = new PrincipalProfile(
-                existUser.getId(),
-                existUser.getUsername(),
-                existUser.getEmail(),
-                existUser.getFirstName(),
-                existUser.getLastName()
-        );
+        var authorities = userAuthoryService.getAuthorities(existUser.getId());
+        var principal =
+                new Principal(
+                        existUser.getId(),
+                        existUser.getUsername(),
+                        existUser.getEmail(),
+                        existUser.getFirstName(),
+                        existUser.getLastName(),
+                        authorities);
         return getAuth(principal);
     }
 
@@ -118,48 +128,39 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 
         tokenService.revokeAllByUserId(existUser.getId());
 
-        var principal = new PrincipalProfile(
-                existUser.getId(),
-                existUser.getUsername(),
-                existUser.getEmail(),
-                existUser.getFirstName(),
-                existUser.getLastName()
-        );
+        var authorities = userAuthoryService.getAuthorities(existUser.getId());
+        var principal =
+                new Principal(
+                        existUser.getId(),
+                        existUser.getUsername(),
+                        existUser.getEmail(),
+                        existUser.getFirstName(),
+                        existUser.getLastName(),
+                        authorities);
         return getAuth(principal);
     }
 
     @Override
-    public PrincipalProfile getPrincipal(String token) {
+    public Principal getPrincipal(String token) {
         String jti = jwtProvider.extractJti(token);
         TokenDto existToken = tokenService.getByJtiAndRevokedIsFalse(jti);
         return this.getPrincipal(existToken.getUserId());
     }
 
     @Override
-    public PrincipalProfile getPrincipal(UUID userId) {
+    public Principal getPrincipal(UUID userId) {
         UserDto existUser = userService.get(userId);
-        return new PrincipalProfile(
+        var authorities = userAuthoryService.getAuthorities(existUser.getId());
+        return new Principal(
                 existUser.getId(),
                 existUser.getUsername(),
                 existUser.getEmail(),
                 existUser.getFirstName(),
-                existUser.getLastName()
-        );
+                existUser.getLastName(),
+                authorities);
     }
 
-    @Override
-    public PrincipalAuthorities getAuthorities(UUID userId) {
-        return userAuthoryService.getAuthorities(userId);
-    }
-
-    @Override
-    public PrincipalAuthorities getAuthorities(String token) {
-        String jti = jwtProvider.extractJti(token);
-        TokenDto existToken = tokenService.getByJtiAndRevokedIsFalse(jti);
-        return this.getAuthorities(existToken.getUserId());
-    }
-
-    private Auth getAuth(PrincipalProfile principal) {
+    private Auth getAuth(Principal principal) {
 
         var accessToken = jwtProvider.generateToken(principal, TokenType.ACCESS);
         saveUserToken(principal, accessToken, TokenType.ACCESS);
@@ -175,19 +176,18 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
                 .build();
     }
 
-    private void saveUserToken(PrincipalProfile principal, String principalToken, TokenType tokenType) {
-        var token = TokenDto.builder()
-                .jti(jwtProvider.extractJti(principalToken))
-                .type(tokenType.name())
-                .userId(principal.id())
-                .revoked(Boolean.FALSE)
-                .expiredAt(
-                        LocalDateTime.ofInstant(
-                                jwtProvider.extractExpiration(principalToken).toInstant(),
-                                ZoneId.systemDefault()
-                        )
-                )
-                .build();
+    private void saveUserToken(Principal principal, String principalToken, TokenType tokenType) {
+        var token =
+                TokenDto.builder()
+                        .jti(jwtProvider.extractJti(principalToken))
+                        .type(tokenType.name())
+                        .userId(principal.id())
+                        .revoked(Boolean.FALSE)
+                        .expiredAt(
+                                LocalDateTime.ofInstant(
+                                        jwtProvider.extractExpiration(principalToken).toInstant(),
+                                        ZoneId.systemDefault()))
+                        .build();
         tokenService.create(token);
     }
 }

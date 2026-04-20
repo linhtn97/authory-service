@@ -1,17 +1,19 @@
 package com.linhtn.authory_service.modules.rbac.repository;
 
-import com.linhtn.authory_service.modules.rbac.domain.entity.PartnerGroup;
+import java.util.Set;
+import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.Set;
-import java.util.UUID;
+import com.linhtn.authory_service.modules.rbac.domain.entity.PartnerGroup;
 
 @Repository
-public interface PartnerGroupRepository extends JpaRepository<PartnerGroup, UUID>, JpaSpecificationExecutor<PartnerGroup> {
+public interface PartnerGroupRepository
+        extends JpaRepository<PartnerGroup, UUID>, JpaSpecificationExecutor<PartnerGroup> {
 
     @Query("SELECT pg.group.id FROM PartnerGroup pg WHERE pg.partnerId = :partnerId")
     Set<UUID> findGroupIdsByPartnerId(UUID partnerId);
@@ -21,7 +23,8 @@ public interface PartnerGroupRepository extends JpaRepository<PartnerGroup, UUID
     void deleteByPartnerId(UUID partnerId);
 
     @Modifying
-    @Query("""
+    @Query(
+            """
                 DELETE FROM PartnerGroup pg
                 WHERE pg.partnerId = :partnerId
                 AND pg.group.id IN :groupIds

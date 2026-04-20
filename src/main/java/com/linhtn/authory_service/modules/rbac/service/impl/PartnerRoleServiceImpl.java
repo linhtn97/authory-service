@@ -1,5 +1,12 @@
 package com.linhtn.authory_service.modules.rbac.service.impl;
 
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.linhtn.authory_service.modules.rbac.domain.dto.RoleDto;
 import com.linhtn.authory_service.modules.rbac.domain.entity.PartnerRole;
 import com.linhtn.authory_service.modules.rbac.domain.entity.Role;
@@ -7,12 +14,6 @@ import com.linhtn.authory_service.modules.rbac.domain.mapper.RoleMapper;
 import com.linhtn.authory_service.modules.rbac.repository.PartnerRoleRepository;
 import com.linhtn.authory_service.modules.rbac.repository.RoleRepository;
 import com.linhtn.authory_service.modules.rbac.service.PartnerRoleService;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 @Service
 public class PartnerRoleServiceImpl implements PartnerRoleService {
@@ -21,8 +22,10 @@ public class PartnerRoleServiceImpl implements PartnerRoleService {
     private final RoleRepository roleRepository;
     private final RoleMapper roleMapper;
 
-    public PartnerRoleServiceImpl(PartnerRoleRepository partnerRoleRepository,
-                                  RoleRepository roleRepository, RoleMapper roleMapper) {
+    public PartnerRoleServiceImpl(
+            PartnerRoleRepository partnerRoleRepository,
+            RoleRepository roleRepository,
+            RoleMapper roleMapper) {
         this.partnerRoleRepository = partnerRoleRepository;
         this.roleRepository = roleRepository;
         this.roleMapper = roleMapper;
@@ -34,15 +37,17 @@ public class PartnerRoleServiceImpl implements PartnerRoleService {
         partnerRoleRepository.deleteByPartnerId(partnerId);
 
         if (!roleIds.isEmpty()) {
-            List<PartnerRole> mappings = roleIds.stream()
-                    .map(rid -> {
-                        Role role = roleRepository.getReferenceById(rid);
-                        PartnerRole pr = new PartnerRole();
-                        pr.setPartnerId(partnerId);
-                        pr.setRole(role);
-                        return pr;
-                    })
-                    .toList();
+            List<PartnerRole> mappings =
+                    roleIds.stream()
+                            .map(
+                                    rid -> {
+                                        Role role = roleRepository.getReferenceById(rid);
+                                        PartnerRole pr = new PartnerRole();
+                                        pr.setPartnerId(partnerId);
+                                        pr.setRole(role);
+                                        return pr;
+                                    })
+                            .toList();
 
             partnerRoleRepository.saveAll(mappings);
         }
@@ -80,4 +85,3 @@ public class PartnerRoleServiceImpl implements PartnerRoleService {
         return roleMapper.toDtos(roleRepository.findAllById(roleIds));
     }
 }
-

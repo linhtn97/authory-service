@@ -1,11 +1,12 @@
 package com.linhtn.shared_kernel.domain.mapper;
 
-import com.linhtn.shared_kernel.common.model.PagingResponse;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.mapstruct.MappingTarget;
 import org.springframework.data.domain.Page;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import com.linhtn.shared_kernel.common.model.PagingResponse;
 
 public interface BaseMapper<E, D> {
     D toDto(E e);
@@ -16,7 +17,7 @@ public interface BaseMapper<E, D> {
         return e.stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    default PagingResponse<D> toPage( Page<E> page) {
+    default PagingResponse<D> toPage(Page<E> page) {
         return PagingResponse.<D>builder()
                 .page(page.getNumber())
                 .pageSize(page.getSize())

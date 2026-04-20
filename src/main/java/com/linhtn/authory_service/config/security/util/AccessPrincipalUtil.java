@@ -1,29 +1,28 @@
 package com.linhtn.authory_service.config.security.util;
 
-import com.linhtn.authory_service.config.security.model.PrincipalProfile;
-
 import java.util.Optional;
 import java.util.UUID;
+
+import com.linhtn.authory_service.config.security.model.Principal;
 
 public class AccessPrincipalUtil {
     private AccessPrincipalUtil() {
         throw new IllegalStateException("Utility class");
     }
 
-    private static Optional<PrincipalProfile> getPrincipal() {
+    private static Optional<Principal> getPrincipal() {
         return SecurityUtil.getAccessPrincipal();
     }
 
     public static UUID getId() {
-        return getPrincipal().map(PrincipalProfile::id).orElse(null);
+        return getPrincipal().map(Principal::id).orElse(null);
     }
 
     public static String getUsername() {
-        return getPrincipal().map(PrincipalProfile::username).orElse(null);
+        return getPrincipal().map(Principal::username).orElse(null);
     }
 
     public static String getEmail() {
-        return getPrincipal().map(PrincipalProfile::email).orElse(null);
+        return getPrincipal().map(Principal::email).orElse(null);
     }
-
 }

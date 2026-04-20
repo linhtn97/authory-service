@@ -4,8 +4,8 @@ import lombok.Getter;
 
 @Getter
 public enum GroupError {
-    GROUP_NOT_FOUND("error.group.not_found"),  // 404 - Not Found
-    GROUP_ALREADY_EXISTS("error.group.already_exists");  // 409 - Conflict
+    GROUP_NOT_FOUND("error.group.not_found"), // 404 - Not Found
+    GROUP_ALREADY_EXISTS("error.group.already_exists"); // 409 - Conflict
     ;
     private final String message;
 

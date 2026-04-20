@@ -1,7 +1,8 @@
 package com.linhtn.shared_kernel.common.exception.unchecked;
 
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
+
+import lombok.Getter;
 
 @Getter
 public class ApplicationException extends RuntimeException {
@@ -16,7 +17,8 @@ public class ApplicationException extends RuntimeException {
         this.message = message;
     }
 
-    public ApplicationException(HttpStatus status, String errorCode, String message, Object metadata) {
+    public ApplicationException(
+            HttpStatus status, String errorCode, String message, Object metadata) {
         this.status = status;
         this.errorCode = errorCode;
         this.message = message;

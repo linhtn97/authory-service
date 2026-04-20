@@ -1,5 +1,16 @@
 package com.linhtn.authory_service.modules.user.service.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.linhtn.authory_service.config.i18n.I18nHelper;
 import com.linhtn.authory_service.modules.user.domain.dto.EmployeeDto;
 import com.linhtn.authory_service.modules.user.domain.entity.Employee;
@@ -12,16 +23,6 @@ import com.linhtn.shared_kernel.common.model.FieldOrder;
 import com.linhtn.shared_kernel.common.model.PagingRequest;
 import com.linhtn.shared_kernel.common.model.PagingResponse;
 import com.linhtn.shared_kernel.infrastructure.jpa.specification.GenericSpecification;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
@@ -30,9 +31,10 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final EmployeeMapper employeeMapper;
 
-    public EmployeeServiceImpl(I18nHelper i18nHelper,
-                               EmployeeRepository employeeRepository,
-                               EmployeeMapper employeeMapper) {
+    public EmployeeServiceImpl(
+            I18nHelper i18nHelper,
+            EmployeeRepository employeeRepository,
+            EmployeeMapper employeeMapper) {
         this.i18nHelper = i18nHelper;
         this.employeeRepository = employeeRepository;
         this.employeeMapper = employeeMapper;
@@ -43,13 +45,15 @@ public class EmployeeServiceImpl implements EmployeeService {
         Specification<Employee> specification = new GenericSpecification<>(request);
 
         List<Sort.Order> orders = new ArrayList<>();
-        request.getOrders().forEach(o -> {
-            if (o.getSort().equals(FieldOrder.SortType.asc)) {
-                orders.add(Sort.Order.asc(o.getField()));
-            } else if (o.getSort().equals(FieldOrder.SortType.desc)) {
-                orders.add(Sort.Order.desc(o.getField()));
-            }
-        });
+        request.getOrders()
+                .forEach(
+                        o -> {
+                            if (o.getSort().equals(FieldOrder.SortType.asc)) {
+                                orders.add(Sort.Order.asc(o.getField()));
+                            } else if (o.getSort().equals(FieldOrder.SortType.desc)) {
+                                orders.add(Sort.Order.desc(o.getField()));
+                            }
+                        });
 
         Sort sort = Sort.by(orders);
         Pageable pageable = PageRequest.of(request.getPage(), request.getPageSize(), sort);
@@ -61,11 +65,17 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public EmployeeDto get(UUID id) {
-        Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new EmployeeNotFoundException(
-                        EmployeeError.EMPLOYEE_NOT_FOUND.name(),
-                        i18nHelper.getMessage(EmployeeError.EMPLOYEE_NOT_FOUND.getMessage(), id)
-                ));
+        Employee employee =
+                employeeRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new EmployeeNotFoundException(
+                                                EmployeeError.EMPLOYEE_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        EmployeeError.EMPLOYEE_NOT_FOUND
+                                                                .getMessage(),
+                                                        id)));
         return employeeMapper.toDto(employee);
     }
 
@@ -80,11 +90,16 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     @Transactional
     public EmployeeDto update(UUID id, EmployeeDto request) {
-        Employee existEmployee = employeeRepository.findById(id)
-                .orElseThrow(() -> new EmployeeNotFoundException(
-                        EmployeeError.EMPLOYEE_NOT_FOUND.name(),
-                        i18nHelper.getMessage(EmployeeError.EMPLOYEE_NOT_FOUND.getMessage())
-                ));
+        Employee existEmployee =
+                employeeRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new EmployeeNotFoundException(
+                                                EmployeeError.EMPLOYEE_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        EmployeeError.EMPLOYEE_NOT_FOUND
+                                                                .getMessage())));
 
         employeeMapper.fillEntity(existEmployee, request);
         return employeeMapper.toDto(employeeRepository.save(existEmployee));
@@ -93,12 +108,16 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     @Transactional
     public void delete(UUID id) {
-        Employee existEmployee = employeeRepository.findById(id)
-                .orElseThrow(() -> new EmployeeNotFoundException(
-                        EmployeeError.EMPLOYEE_NOT_FOUND.name(),
-                        i18nHelper.getMessage(EmployeeError.EMPLOYEE_NOT_FOUND.getMessage())
-                ));
+        Employee existEmployee =
+                employeeRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new EmployeeNotFoundException(
+                                                EmployeeError.EMPLOYEE_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        EmployeeError.EMPLOYEE_NOT_FOUND
+                                                                .getMessage())));
         employeeRepository.delete(existEmployee);
     }
 }
-

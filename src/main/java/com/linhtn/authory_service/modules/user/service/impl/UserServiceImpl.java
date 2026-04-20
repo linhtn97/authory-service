@@ -1,5 +1,17 @@
 package com.linhtn.authory_service.modules.user.service.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.linhtn.authory_service.config.i18n.I18nHelper;
 import com.linhtn.authory_service.modules.user.domain.dto.UserDto;
 import com.linhtn.authory_service.modules.user.domain.entity.User;
@@ -15,17 +27,6 @@ import com.linhtn.shared_kernel.common.model.FieldOrder;
 import com.linhtn.shared_kernel.common.model.PagingRequest;
 import com.linhtn.shared_kernel.common.model.PagingResponse;
 import com.linhtn.shared_kernel.infrastructure.jpa.specification.GenericSpecification;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -34,7 +35,11 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final ApplicationEventPublisher eventPublisher;
 
-    public UserServiceImpl(I18nHelper i18nHelper, UserRepository userRepository, UserMapper userMapper, ApplicationEventPublisher eventPublisher) {
+    public UserServiceImpl(
+            I18nHelper i18nHelper,
+            UserRepository userRepository,
+            UserMapper userMapper,
+            ApplicationEventPublisher eventPublisher) {
         this.i18nHelper = i18nHelper;
         this.userRepository = userRepository;
         this.userMapper = userMapper;
@@ -46,13 +51,15 @@ public class UserServiceImpl implements UserService {
         Specification<User> specification = new GenericSpecification<>(request);
 
         List<Sort.Order> orders = new ArrayList<>();
-        request.getOrders().forEach(o -> {
-            if (o.getSort().equals(FieldOrder.SortType.asc)) {
-                orders.add(Sort.Order.asc(o.getField()));
-            } else if (o.getSort().equals(FieldOrder.SortType.desc)) {
-                orders.add(Sort.Order.desc(o.getField()));
-            }
-        });
+        request.getOrders()
+                .forEach(
+                        o -> {
+                            if (o.getSort().equals(FieldOrder.SortType.asc)) {
+                                orders.add(Sort.Order.asc(o.getField()));
+                            } else if (o.getSort().equals(FieldOrder.SortType.desc)) {
+                                orders.add(Sort.Order.desc(o.getField()));
+                            }
+                        });
         Sort sort = Sort.by(orders);
         Pageable pageable = PageRequest.of(request.getPage(), request.getPageSize(), sort);
 
@@ -63,10 +70,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto get(UUID id) {
-        return userMapper.toDto(userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(
-                UserError.USER_NOT_FOUND.name(),
-                i18nHelper.getMessage(UserError.USER_NOT_FOUND.getMessage(), id)))
-        );
+        return userMapper.toDto(
+                userRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new UserNotFoundException(
+                                                UserError.USER_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        UserError.USER_NOT_FOUND.getMessage(),
+                                                        id))));
     }
 
     @Override
@@ -82,10 +95,15 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserDto update(UUID id, UserDto request) {
-        User existUser = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(
-                UserError.USER_NOT_FOUND.name(),
-                i18nHelper.getMessage(UserError.USER_NOT_FOUND.getMessage()))
-        );
+        User existUser =
+                userRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new UserNotFoundException(
+                                                UserError.USER_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        UserError.USER_NOT_FOUND.getMessage())));
         userMapper.fillEntity(existUser, request);
         User savedUser = userRepository.save(existUser);
         eventPublisher.publishEvent(new UserUpdateEvent(savedUser));
@@ -95,38 +113,59 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void delete(UUID id) {
-        User existUser = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(
-                UserError.USER_NOT_FOUND.name(),
-                i18nHelper.getMessage(UserError.USER_NOT_FOUND.getMessage()))
-        );
+        User existUser =
+                userRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new UserNotFoundException(
+                                                UserError.USER_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        UserError.USER_NOT_FOUND.getMessage())));
         userRepository.delete(existUser);
         eventPublisher.publishEvent(new UserDeleteEvent(existUser));
     }
 
     @Override
     public UserDto getByUsername(String username) {
-        User existUser = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(
-                UserError.USER_NOT_FOUND.name(),
-                i18nHelper.getMessage(UserError.USER_NOT_FOUND.getMessage(),  username))
-        );
+        User existUser =
+                userRepository
+                        .findByUsername(username)
+                        .orElseThrow(
+                                () ->
+                                        new UserNotFoundException(
+                                                UserError.USER_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        UserError.USER_NOT_FOUND.getMessage(),
+                                                        username)));
         return userMapper.toDto(existUser);
     }
 
     @Override
     public UserDto getByEmail(String email) {
-        User existUser = userRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException(
-                UserError.USER_NOT_FOUND.name(),
-                i18nHelper.getMessage(UserError.USER_NOT_FOUND.getMessage()))
-        );
+        User existUser =
+                userRepository
+                        .findByEmail(email)
+                        .orElseThrow(
+                                () ->
+                                        new UserNotFoundException(
+                                                UserError.USER_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        UserError.USER_NOT_FOUND.getMessage())));
         return userMapper.toDto(existUser);
     }
 
     @Override
     public UserDto getByUsernameOrEmail(String um) {
-        User existUser = userRepository.findByUsernameOrEmail(um, um).orElseThrow(() -> new UserNotFoundException(
-                UserError.USER_NOT_FOUND.name(),
-                i18nHelper.getMessage(UserError.USER_NOT_FOUND.getMessage()))
-        );
+        User existUser =
+                userRepository
+                        .findByUsernameOrEmail(um, um)
+                        .orElseThrow(
+                                () ->
+                                        new UserNotFoundException(
+                                                UserError.USER_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        UserError.USER_NOT_FOUND.getMessage())));
         return userMapper.toDto(existUser);
     }
 
@@ -135,4 +174,3 @@ public class UserServiceImpl implements UserService {
         return userRepository.existsByUsernameOrEmail(username, email);
     }
 }
-

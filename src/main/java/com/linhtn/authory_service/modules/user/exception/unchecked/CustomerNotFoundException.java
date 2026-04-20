@@ -7,4 +7,3 @@ public class CustomerNotFoundException extends NotFoundException {
         super(errorCode, message);
     }
 }
-

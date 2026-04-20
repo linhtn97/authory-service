@@ -1,11 +1,10 @@
 package com.linhtn.authory_service.representation.rest.controller;
 
-import com.linhtn.authory_service.modules.abac.domain.dto.AttributeDto;
-import com.linhtn.authory_service.modules.abac.service.AttributeService;
-import com.linhtn.shared_kernel.common.model.FieldOrder;
-import com.linhtn.shared_kernel.common.model.PagingRequest;
-import com.linhtn.shared_kernel.common.model.PagingResponse;
+import java.util.List;
+import java.util.UUID;
+
 import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -19,8 +18,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.UUID;
+import com.linhtn.authory_service.modules.abac.domain.dto.AttributeDto;
+import com.linhtn.authory_service.modules.abac.service.AttributeService;
+import com.linhtn.shared_kernel.common.model.FieldOrder;
+import com.linhtn.shared_kernel.common.model.PagingRequest;
+import com.linhtn.shared_kernel.common.model.PagingResponse;
 
 @RestController
 @RequestMapping("/api/v1/attributes")
@@ -38,19 +40,18 @@ public class AttributeController {
             @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String sortDir,
-            @RequestParam(required = false) String search
-    ) {
-        PagingRequest request = PagingRequest.builder()
-                .page(page)
-                .pageSize(pageSize)
-                .build();
+            @RequestParam(required = false) String search) {
+        PagingRequest request = PagingRequest.builder().page(page).pageSize(pageSize).build();
 
         if (sortBy != null) {
-            FieldOrder order = FieldOrder.builder()
-                    .field(sortBy)
-                    .sort(sortDir != null && sortDir.equalsIgnoreCase("desc") ?
-                            FieldOrder.SortType.desc : FieldOrder.SortType.asc)
-                    .build();
+            FieldOrder order =
+                    FieldOrder.builder()
+                            .field(sortBy)
+                            .sort(
+                                    sortDir != null && sortDir.equalsIgnoreCase("desc")
+                                            ? FieldOrder.SortType.desc
+                                            : FieldOrder.SortType.asc)
+                            .build();
             request.setOrders(List.of(order));
         }
 
@@ -60,7 +61,8 @@ public class AttributeController {
     }
 
     @PostMapping("/get-page")
-    public ResponseEntity<PagingResponse<AttributeDto>> getPage(@Valid @RequestBody PagingRequest req) {
+    public ResponseEntity<PagingResponse<AttributeDto>> getPage(
+            @Valid @RequestBody PagingRequest req) {
         return ResponseEntity.ok(attributeService.getPage(req));
     }
 
@@ -76,7 +78,8 @@ public class AttributeController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<AttributeDto> update(@PathVariable UUID id, @RequestBody AttributeDto request) {
+    public ResponseEntity<AttributeDto> update(
+            @PathVariable UUID id, @RequestBody AttributeDto request) {
         AttributeDto updated = attributeService.update(id, request);
         return ResponseEntity.ok(updated);
     }
@@ -87,4 +90,3 @@ public class AttributeController {
         attributeService.delete(id);
     }
 }
-

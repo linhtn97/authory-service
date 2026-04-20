@@ -1,13 +1,14 @@
 package com.linhtn.authory_service.modules.user.repository;
 
-import com.linhtn.authory_service.modules.user.domain.entity.User;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
-import java.util.UUID;
+import com.linhtn.authory_service.modules.user.domain.entity.User;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificationExecutor<User> {
@@ -19,6 +20,8 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
 
     boolean existsByUsernameOrEmail(String username, String email);
 
-    @Query(value = "SELECT COUNT(*) FROM auth.users WHERE created_at >= CURRENT_DATE", nativeQuery = true)
+    @Query(
+            value = "SELECT COUNT(*) FROM auth.users WHERE created_at >= CURRENT_DATE",
+            nativeQuery = true)
     long countNewUsersToday();
 }

@@ -1,16 +1,18 @@
 package com.linhtn.authory_service.config.security.filter;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import com.linhtn.authory_service.config.security.config.SecurityProperties;
-import com.linhtn.authory_service.config.security.exception.error.AuthError;
-import com.linhtn.authory_service.modules.auth.service.PartnerAuthenticationService;
-import com.linhtn.authory_service.modules.auth.service.UserAuthenticationService;
-import com.linhtn.shared_kernel.representation.api.ApiErrorResponse;
-import com.linhtn.authory_service.config.i18n.I18nHelper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -23,15 +25,15 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
-import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import com.linhtn.authory_service.config.i18n.I18nHelper;
+import com.linhtn.authory_service.config.security.config.SecurityProperties;
+import com.linhtn.authory_service.config.security.exception.error.AuthError;
+import com.linhtn.authory_service.modules.auth.service.PartnerAuthenticationService;
+import com.linhtn.authory_service.modules.auth.service.UserAuthenticationService;
+import com.linhtn.shared_kernel.representation.api.ApiErrorResponse;
+
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
@@ -43,7 +45,12 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     private final ObjectMapper objectMapper;
     private final SecurityProperties securityProperties;
 
-    public JwtAuthorizationFilter(I18nHelper i18nHelper, PartnerAuthenticationService partnerAuthenticationService, UserAuthenticationService userAuthenticationService, ObjectMapper objectMapper, SecurityProperties securityProperties) {
+    public JwtAuthorizationFilter(
+            I18nHelper i18nHelper,
+            PartnerAuthenticationService partnerAuthenticationService,
+            UserAuthenticationService userAuthenticationService,
+            ObjectMapper objectMapper,
+            SecurityProperties securityProperties) {
         this.i18nHelper = i18nHelper;
         this.partnerAuthenticationService = partnerAuthenticationService;
         this.userAuthenticationService = userAuthenticationService;
@@ -55,13 +62,14 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
 
-        return securityProperties.getWhitelistRoutes()
-                .stream()
+        return securityProperties.getWhitelistRoutes().stream()
                 .anyMatch(pattern -> new AntPathMatcher().match(pattern, path));
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(
+            HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         try {
             if (isPartnerRequest(request)) {
                 try {
@@ -77,35 +85,37 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                     }
 
                     MDC.put("traceId", traceId == null ? UUID.randomUUID().toString() : traceId);
-                    MDC.put("partnerId", String.valueOf(principal.id())); // or authUser.getUsername()
+                    MDC.put(
+                            "partnerId",
+                            String.valueOf(principal.id())); // or authUser.getUsername()
 
                     if (shouldAuthenticate(principal.username())) {
-                        var principalAuthorities = partnerAuthenticationService.getAuthorities(principal.id());
+                        var principalAuthorities = principal.authorities();
 
-                        Collection<GrantedAuthority> authorities = Stream.of(
-                                        principalAuthorities.roles(),
-                                        principalAuthorities.groups(),
-                                        principalAuthorities.resources(),
-                                        principalAuthorities.permissions()
-                                )
-                                .flatMap(Set::stream)
-                                .map(SimpleGrantedAuthority::new)
-                                .distinct()
-                                .collect(Collectors.toList());
+                        Collection<GrantedAuthority> authorities =
+                                Stream.of(
+                                                principalAuthorities.roles(),
+                                                principalAuthorities.groups(),
+                                                principalAuthorities.resources(),
+                                                principalAuthorities.permissions())
+                                        .flatMap(Set::stream)
+                                        .map(SimpleGrantedAuthority::new)
+                                        .distinct()
+                                        .collect(Collectors.toList());
 
-                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                                principal, null, authorities
-                        );
-                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        UsernamePasswordAuthenticationToken authToken =
+                                new UsernamePasswordAuthenticationToken(
+                                        principal, null, authorities);
+                        authToken.setDetails(
+                                new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(authToken);
                     }
                 } catch (Exception e) {
-                    logger.error("Exception during extract partner authentication: {}", e.getMessage(), e);
-                    setErrorResponse(
+                    logger.error(
+                            "Exception during extract partner authentication: {}",
                             e.getMessage(),
-                            request.getRequestURI(),
-                            response
-                    );
+                            e);
+                    setErrorResponse(e.getMessage(), request.getRequestURI(), response);
                     return;
                 }
 
@@ -124,39 +134,36 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                 final String currentToken = extractTokenFromHeader(authHeader);
                 var principal = userAuthenticationService.getPrincipal(currentToken);
                 if (shouldAuthenticate(principal.username())) {
-                    // this way also can check token revoked and make sure this is access token not refresh token
+                    // this way also can check token revoked and make sure this is access token not
+                    // refresh token
 
                     MDC.put("traceId", UUID.randomUUID().toString());
                     MDC.put("userId", String.valueOf(principal.id())); // or authUser.getUsername()
 
-                    var principalAuthorities = userAuthenticationService.getAuthorities(principal.id());
+                    var principalAuthorities = principal.authorities();
 
-                    Collection<GrantedAuthority> authorities = Stream.of(
-                                    principalAuthorities.roles(),
-                                    principalAuthorities.groups(),
-                                    principalAuthorities.resources(),
-                                    principalAuthorities.permissions()
-                            )
-                            .flatMap(Set::stream)
-                            .map(SimpleGrantedAuthority::new)
-                            .distinct()
-                            .collect(Collectors.toList());
+                    Collection<GrantedAuthority> authorities =
+                            Stream.of(
+                                            principalAuthorities.roles(),
+                                            principalAuthorities.groups(),
+                                            principalAuthorities.resources(),
+                                            principalAuthorities.permissions())
+                                    .flatMap(Set::stream)
+                                    .map(SimpleGrantedAuthority::new)
+                                    .distinct()
+                                    .collect(Collectors.toList());
 
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            principal, null, authorities
-                    );
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(principal, null, authorities);
 
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    authToken.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request));
 
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             } catch (Exception e) {
                 logger.error("Exception during token processing: {}", e.getMessage(), e);
-                setErrorResponse(
-                        e.getMessage(),
-                        request.getRequestURI(),
-                        response
-                );
+                setErrorResponse(e.getMessage(), request.getRequestURI(), response);
                 return;
             }
 
@@ -181,7 +188,8 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         return username != null && SecurityContextHolder.getContext().getAuthentication() == null;
     }
 
-    private void setErrorResponse(String metadata, String path, HttpServletResponse response) throws IOException {
+    private void setErrorResponse(String metadata, String path, HttpServletResponse response)
+            throws IOException {
         ApiErrorResponse apiError = new ApiErrorResponse();
         apiError.setErrorCode(HttpStatus.UNAUTHORIZED.name());
         apiError.setErrorMessage(i18nHelper.getMessage(AuthError.UNAUTHORIZED.getMessage()));
@@ -192,8 +200,6 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType("application/json");
 
-        response.getWriter().write(
-                objectMapper.writeValueAsString(apiError)
-        );
+        response.getWriter().write(objectMapper.writeValueAsString(apiError));
     }
 }

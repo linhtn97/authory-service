@@ -1,17 +1,19 @@
 package com.linhtn.authory_service.modules.rbac.repository;
 
-import com.linhtn.authory_service.modules.rbac.domain.entity.UserRole;
+import java.util.Set;
+import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.Set;
-import java.util.UUID;
+import com.linhtn.authory_service.modules.rbac.domain.entity.UserRole;
 
 @Repository
-public interface UserRoleRepository extends JpaRepository<UserRole, UUID>, JpaSpecificationExecutor<UserRole> {
+public interface UserRoleRepository
+        extends JpaRepository<UserRole, UUID>, JpaSpecificationExecutor<UserRole> {
 
     @Query("SELECT ur.role.id FROM UserRole ur WHERE ur.userId = :userId")
     Set<UUID> findRoleIdsByUserId(UUID userId);
@@ -21,7 +23,8 @@ public interface UserRoleRepository extends JpaRepository<UserRole, UUID>, JpaSp
     void deleteByUserId(UUID userId);
 
     @Modifying
-    @Query("""
+    @Query(
+            """
         DELETE FROM UserRole ur
         WHERE ur.userId = :userId
         AND ur.role.id IN :roleIds

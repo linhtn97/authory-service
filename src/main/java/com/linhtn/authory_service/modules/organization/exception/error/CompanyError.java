@@ -4,8 +4,8 @@ import lombok.Getter;
 
 @Getter
 public enum CompanyError {
-    COMPANY_NOT_FOUND("error.company.not_found"),  // 404 - Not Found
-    COMPANY_ALREADY_EXISTS("error.company.already_exists"),  // 409 - Conflict
+    COMPANY_NOT_FOUND("error.company.not_found"), // 404 - Not Found
+    COMPANY_ALREADY_EXISTS("error.company.already_exists"), // 409 - Conflict
     ;
     private final String message;
 

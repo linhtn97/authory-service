@@ -1,11 +1,12 @@
 package com.linhtn.authory_service.config.security.util;
 
-import com.linhtn.authory_service.config.security.model.PrincipalProfile;
+import java.util.Optional;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.Optional;
+import com.linhtn.authory_service.config.security.model.Principal;
 
 public class SecurityUtil {
     private SecurityUtil() {
@@ -18,7 +19,7 @@ public class SecurityUtil {
                 .map(Authentication::getPrincipal);
     }
 
-    public static Optional<PrincipalProfile> getAccessPrincipal() {
-        return getPrincipal().filter(PrincipalProfile.class::isInstance).map(PrincipalProfile.class::cast);
+    public static Optional<Principal> getAccessPrincipal() {
+        return getPrincipal().filter(Principal.class::isInstance).map(Principal.class::cast);
     }
 }

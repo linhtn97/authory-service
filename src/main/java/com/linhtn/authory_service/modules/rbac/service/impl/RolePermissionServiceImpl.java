@@ -1,5 +1,12 @@
 package com.linhtn.authory_service.modules.rbac.service.impl;
 
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.linhtn.authory_service.modules.rbac.domain.entity.Permission;
 import com.linhtn.authory_service.modules.rbac.domain.entity.Role;
 import com.linhtn.authory_service.modules.rbac.domain.entity.RolePermission;
@@ -7,12 +14,6 @@ import com.linhtn.authory_service.modules.rbac.repository.PermissionRepository;
 import com.linhtn.authory_service.modules.rbac.repository.RolePermissionRepository;
 import com.linhtn.authory_service.modules.rbac.repository.RoleRepository;
 import com.linhtn.authory_service.modules.rbac.service.RolePermissionService;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 @Service
 public class RolePermissionServiceImpl implements RolePermissionService {
@@ -21,9 +22,10 @@ public class RolePermissionServiceImpl implements RolePermissionService {
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
 
-    public RolePermissionServiceImpl(RolePermissionRepository rolePermissionRepository,
-                                     RoleRepository roleRepository,
-                                     PermissionRepository permissionRepository) {
+    public RolePermissionServiceImpl(
+            RolePermissionRepository rolePermissionRepository,
+            RoleRepository roleRepository,
+            PermissionRepository permissionRepository) {
         this.rolePermissionRepository = rolePermissionRepository;
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
@@ -37,15 +39,18 @@ public class RolePermissionServiceImpl implements RolePermissionService {
         if (!permissionIds.isEmpty()) {
             Role role = roleRepository.getReferenceById(roleId);
 
-            List<RolePermission> mappings = permissionIds.stream()
-                    .map(pid -> {
-                        Permission perm = permissionRepository.getReferenceById(pid);
-                        RolePermission rp = new RolePermission();
-                        rp.setRole(role);
-                        rp.setPermission(perm);
-                        return rp;
-                    })
-                    .toList();
+            List<RolePermission> mappings =
+                    permissionIds.stream()
+                            .map(
+                                    pid -> {
+                                        Permission perm =
+                                                permissionRepository.getReferenceById(pid);
+                                        RolePermission rp = new RolePermission();
+                                        rp.setRole(role);
+                                        rp.setPermission(perm);
+                                        return rp;
+                                    })
+                            .toList();
 
             rolePermissionRepository.saveAll(mappings);
         }

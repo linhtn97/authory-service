@@ -1,5 +1,17 @@
 package com.linhtn.authory_service.modules.auth.service.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.linhtn.authory_service.config.i18n.I18nHelper;
 import com.linhtn.authory_service.modules.auth.domain.dto.ApiCredentialDto;
 import com.linhtn.authory_service.modules.auth.domain.entity.ApiCredential;
@@ -12,17 +24,6 @@ import com.linhtn.shared_kernel.common.model.FieldOrder;
 import com.linhtn.shared_kernel.common.model.PagingRequest;
 import com.linhtn.shared_kernel.common.model.PagingResponse;
 import com.linhtn.shared_kernel.infrastructure.jpa.specification.GenericSpecification;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @Service
 public class ApiCredentialServiceImpl implements ApiCredentialService {
@@ -31,9 +32,10 @@ public class ApiCredentialServiceImpl implements ApiCredentialService {
     private final ApiCredentialRepository apiCredentialRepository;
     private final ApiCredentialMapper apiCredentialMapper;
 
-    public ApiCredentialServiceImpl(I18nHelper i18nHelper,
-                                    ApiCredentialRepository apiCredentialRepository,
-                                    ApiCredentialMapper apiCredentialMapper) {
+    public ApiCredentialServiceImpl(
+            I18nHelper i18nHelper,
+            ApiCredentialRepository apiCredentialRepository,
+            ApiCredentialMapper apiCredentialMapper) {
         this.i18nHelper = i18nHelper;
         this.apiCredentialRepository = apiCredentialRepository;
         this.apiCredentialMapper = apiCredentialMapper;
@@ -45,13 +47,15 @@ public class ApiCredentialServiceImpl implements ApiCredentialService {
         Specification<ApiCredential> specification = new GenericSpecification<>(request);
 
         List<Sort.Order> orders = new ArrayList<>();
-        request.getOrders().forEach(o -> {
-            if (o.getSort().equals(FieldOrder.SortType.asc)) {
-                orders.add(Sort.Order.asc(o.getField()));
-            } else if (o.getSort().equals(FieldOrder.SortType.desc)) {
-                orders.add(Sort.Order.desc(o.getField()));
-            }
-        });
+        request.getOrders()
+                .forEach(
+                        o -> {
+                            if (o.getSort().equals(FieldOrder.SortType.asc)) {
+                                orders.add(Sort.Order.asc(o.getField()));
+                            } else if (o.getSort().equals(FieldOrder.SortType.desc)) {
+                                orders.add(Sort.Order.desc(o.getField()));
+                            }
+                        });
 
         Sort sort = Sort.by(orders);
         Pageable pageable = PageRequest.of(request.getPage(), request.getPageSize(), sort);
@@ -63,12 +67,16 @@ public class ApiCredentialServiceImpl implements ApiCredentialService {
 
     @Override
     public ApiCredentialDto get(UUID id) {
-        ApiCredential apiCredential = apiCredentialRepository.findById(id).orElseThrow(() ->
-                new ApiCredentialNotFoundException(
-                        ApiCredentialError.API_CREDENTIAL_NOT_FOUND.name(),
-                        i18nHelper.getMessage(ApiCredentialError.API_CREDENTIAL_NOT_FOUND.getMessage())
-                )
-        );
+        ApiCredential apiCredential =
+                apiCredentialRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new ApiCredentialNotFoundException(
+                                                ApiCredentialError.API_CREDENTIAL_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        ApiCredentialError.API_CREDENTIAL_NOT_FOUND
+                                                                .getMessage())));
 
         return apiCredentialMapper.toDto(apiCredential);
     }
@@ -86,12 +94,16 @@ public class ApiCredentialServiceImpl implements ApiCredentialService {
     @Override
     @Transactional
     public ApiCredentialDto update(UUID id, ApiCredentialDto request) {
-        ApiCredential existApiCredential = apiCredentialRepository.findById(id).orElseThrow(() ->
-                new ApiCredentialNotFoundException(
-                        ApiCredentialError.API_CREDENTIAL_NOT_FOUND.name(),
-                        i18nHelper.getMessage(ApiCredentialError.API_CREDENTIAL_NOT_FOUND.getMessage())
-                )
-        );
+        ApiCredential existApiCredential =
+                apiCredentialRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new ApiCredentialNotFoundException(
+                                                ApiCredentialError.API_CREDENTIAL_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        ApiCredentialError.API_CREDENTIAL_NOT_FOUND
+                                                                .getMessage())));
 
         apiCredentialMapper.fillEntity(existApiCredential, request);
 
@@ -102,24 +114,32 @@ public class ApiCredentialServiceImpl implements ApiCredentialService {
     @Override
     @Transactional
     public void delete(UUID id) {
-        ApiCredential existApiCredential = apiCredentialRepository.findById(id).orElseThrow(() ->
-                new ApiCredentialNotFoundException(
-                        ApiCredentialError.API_CREDENTIAL_NOT_FOUND.name(),
-                        i18nHelper.getMessage(ApiCredentialError.API_CREDENTIAL_NOT_FOUND.getMessage())
-                )
-        );
+        ApiCredential existApiCredential =
+                apiCredentialRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new ApiCredentialNotFoundException(
+                                                ApiCredentialError.API_CREDENTIAL_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        ApiCredentialError.API_CREDENTIAL_NOT_FOUND
+                                                                .getMessage())));
 
         apiCredentialRepository.delete(existApiCredential);
     }
 
     @Override
     public ApiCredentialDto getByClientIdAndHashedSecret(String clientId, String hashedSecret) {
-        ApiCredential existApiCredential = apiCredentialRepository.findByClientIdAndHashedSecret(clientId, hashedSecret).orElseThrow(() ->
-                new ApiCredentialNotFoundException(
-                        ApiCredentialError.API_CREDENTIAL_NOT_FOUND.name(),
-                        i18nHelper.getMessage(ApiCredentialError.API_CREDENTIAL_NOT_FOUND.getMessage())
-                )
-        );
+        ApiCredential existApiCredential =
+                apiCredentialRepository
+                        .findByClientIdAndHashedSecret(clientId, hashedSecret)
+                        .orElseThrow(
+                                () ->
+                                        new ApiCredentialNotFoundException(
+                                                ApiCredentialError.API_CREDENTIAL_NOT_FOUND.name(),
+                                                i18nHelper.getMessage(
+                                                        ApiCredentialError.API_CREDENTIAL_NOT_FOUND
+                                                                .getMessage())));
         return apiCredentialMapper.toDto(existApiCredential);
     }
 }

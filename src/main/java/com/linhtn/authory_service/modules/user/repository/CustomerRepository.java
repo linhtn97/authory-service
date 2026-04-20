@@ -1,12 +1,13 @@
 package com.linhtn.authory_service.modules.user.repository;
 
-import com.linhtn.authory_service.modules.user.domain.entity.Customer;
+import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
-import java.util.UUID;
+import com.linhtn.authory_service.modules.user.domain.entity.Customer;
 
 @Repository
-public interface CustomerRepository extends JpaRepository<Customer, UUID>, JpaSpecificationExecutor<Customer> {
-}
+public interface CustomerRepository
+        extends JpaRepository<Customer, UUID>, JpaSpecificationExecutor<Customer> {}
