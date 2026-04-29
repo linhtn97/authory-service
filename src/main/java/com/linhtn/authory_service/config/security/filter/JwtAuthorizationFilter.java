@@ -178,9 +178,10 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     }
 
     private boolean isPartnerRequest(HttpServletRequest request) {
-        String partner = request.getHeader("X-Partner-Call");
+        String clientId = request.getHeader("Client-Id");
+        String clientKey = request.getHeader("Client-Key");
 
-        return "true".equalsIgnoreCase(partner);
+        return clientId != null && clientKey != null;
     }
 
     private boolean shouldAuthenticate(String username) {

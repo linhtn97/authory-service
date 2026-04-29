@@ -1,8 +1,12 @@
 package com.linhtn.authory_service.modules.auth.service.impl;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
 import com.linhtn.authory_service.config.security.model.Principal;
+import com.linhtn.authory_service.modules.auth.domain.dto.ApiCredentialDto;
 import com.linhtn.authory_service.modules.auth.service.ApiCredentialService;
 import com.linhtn.authory_service.modules.auth.service.PartnerAuthenticationService;
 import com.linhtn.authory_service.modules.partner.service.PartnerService;
@@ -36,5 +40,18 @@ public class PartnerAuthenticationServiceImpl implements PartnerAuthenticationSe
                 null,
                 null,
                 authorities);
+    }
+
+    @Override
+    public void issueApiKey(UUID partnerId) {
+        var existPartner = partnerService.get(partnerId);
+        apiCredentialService.create(ApiCredentialDto.builder()
+                .partnerId(existPartner.getId())
+                .clientId(UUID.randomUUID().toString())
+                .hashedSecret(UUID.randomUUID().toString())
+                .apiKey(UUID.randomUUID().toString())
+                .expiredAt(LocalDateTime.now().plusYears(1))
+                .status("ACTIVE")
+                .build());
     }
 }
