@@ -72,10 +72,12 @@ public class JwtProvider {
         Instant now = Instant.now();
         var builder =
                 Jwts.builder()
+                        .subject(principal.id().toString())
                         .issuedAt(Date.from(now))
                         .expiration(Date.from(now.plusMillis(expiration)))
                         .claim("jti", UUID.randomUUID().toString())
-                        .claim("uid", principal.id())
+                        .claim("uid", principal.id().toString())
+                        .claim("preferred_username", principal.username())
                         .claim("username", principal.username())
                         .claim("email", principal.email());
 
@@ -132,11 +134,23 @@ public class JwtProvider {
     }
 
     public UUID extractUserId(String token) {
+        String sub = extractClaims(token, Claims::getSubject);
+        if (sub != null && !sub.isBlank()) {
+            try {
+                return UUID.fromString(sub);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
         String uid = extractClaims(token, claims -> claims.get("uid", String.class));
         return uid != null ? UUID.fromString(uid) : null;
     }
 
     public String extractUsername(String token) {
+        String preferredUsername =
+                extractClaims(token, claims -> claims.get("preferred_username", String.class));
+        if (preferredUsername != null && !preferredUsername.isBlank()) {
+            return preferredUsername;
+        }
         return extractClaims(token, claims -> claims.get("username", String.class));
     }
 
