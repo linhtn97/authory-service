@@ -123,7 +123,7 @@ class UserCreateServiceTest {
         assertNotNull(result);
         assertEquals("john.doe", result.getUsername());
         verify(userRepository).create(any(User.class));
-        verify(eventPublisher).publishEvent(any(UserCreateEvent.class));
+        verify(eventPublisher).publishEvent(any(UserCreatedEvent.class));
     }
 }
 ```
@@ -139,16 +139,16 @@ The unit test suite consists of **30 test classes** and **69 unit test cases** e
 | `DashboardGetMetricsServiceTest` | `DashboardGetMetricsService` | Aggregates system metrics exclusively across module ports (`UserGetUseCase`, `RoleGetUseCase`, `TokenUseCase`, etc.) |
 | `UserCredentialServiceTest` | `UserCredentialService` | Credential validation, 5-strike account lockout defense, unlock, MFA enable/disable, password updates |
 | `TokenServiceTest` | `TokenService` | Token generation, JTI validation, revocation, and session cleanup |
-| `UserCreateServiceTest` | `UserCreateService` | User validation, unique constraints, and `UserCreateEvent` publishing |
+| `UserCreateServiceTest` | `UserCreateService` | User validation, unique constraints, and `UserCreatedEvent` publishing |
 | `UserGetServiceTest` | `UserGetService` | Single user retrieval, username lookup, optional findById, count, countNewUsersToday |
-| `UserUpdateServiceTest` | `UserUpdateService` | User field modifications and `UserUpdateEvent` publishing |
-| `UserDeleteServiceTest` | `UserDeleteService` | User deletion and `UserDeleteEvent` publishing |
+| `UserUpdateServiceTest` | `UserUpdateService` | User field modifications and `UserUpdatedEvent` publishing |
+| `UserDeleteServiceTest` | `UserDeleteService` | User deletion and `UserDeletedEvent` publishing |
 | `UserUnlockServiceTest` | `UserUnlockService` | Administrative account unlock delegation |
 | `UserGetPageServiceTest` | `UserGetPageService` | Pagination and sorting response transformation |
-| `RoleCreateServiceTest` | `RoleCreateService` | Role creation and `RoleCreateEvent` publishing |
+| `RoleCreateServiceTest` | `RoleCreateService` | Role creation and `RoleCreatedEvent` publishing |
 | `RoleGetServiceTest` | `RoleGetService` | Single role lookup, count, and not found handling |
-| `RoleUpdateServiceTest` | `RoleUpdateService` | Role updating and `RoleUpdateEvent` publishing |
-| `RoleDeleteServiceTest` | `RoleDeleteService` | Role deletion and `RoleDeleteEvent` publishing |
+| `RoleUpdateServiceTest` | `RoleUpdateService` | Role updating and `RoleUpdatedEvent` publishing |
+| `RoleDeleteServiceTest` | `RoleDeleteService` | Role deletion and `RoleDeletedEvent` publishing |
 | `UserAuthoryServiceTest` | `UserAuthoryService` | Aggregating user roles, groups, resources, and permission merging |
 | `PolicyEvaluationServiceTest` | `PolicyEvaluationService` | ABAC dynamic PDP evaluation via `UserGetUseCase` port and SpEL policy decisions |
 | `AttributeCreateServiceTest` | `AttributeCreateService` | ABAC attribute creation |

@@ -7,6 +7,6 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class UserUpdateEvent {
+public class UserUpdatedEvent {
     private final User user;
 }

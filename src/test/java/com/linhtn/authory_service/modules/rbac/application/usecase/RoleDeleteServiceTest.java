@@ -17,7 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
-import com.linhtn.authory_service.modules.rbac.domain.event.RoleDeleteEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.RoleDeletedEvent;
 import com.linhtn.authory_service.modules.rbac.domain.model.Role;
 import com.linhtn.authory_service.modules.rbac.domain.repository.RoleRepository;
 import com.linhtn.authory_service.modules.rbac.exception.unchecked.RoleNotFoundException;
@@ -38,7 +38,7 @@ class RoleDeleteServiceTest {
     }
 
     @Test
-    @DisplayName("Should successfully delete role and publish RoleDeleteEvent")
+    @DisplayName("Should successfully delete role and publish RoleDeletedEvent")
     void shouldDeleteRoleSuccessfully() {
         UUID roleId = UUID.randomUUID();
         Role role = Role.builder().id(roleId).code("ROLE_TEST").name("Test").build();
@@ -48,7 +48,7 @@ class RoleDeleteServiceTest {
         service.execute(roleId);
 
         verify(roleRepository).delete(roleId);
-        verify(eventPublisher).publishEvent(any(RoleDeleteEvent.class));
+        verify(eventPublisher).publishEvent(any(RoleDeletedEvent.class));
     }
 
     @Test

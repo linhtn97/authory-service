@@ -62,7 +62,7 @@ graph TD
     subgraph Domain_Layer ["Domain Layer (Pure Core)"]
         MODELS["Pure Domain Models<br/>User, Partner, Token, Role, Permission<br/>Company, Branch, Attribute, SystemActivity"]
         REPO_PORTS["Outbound Ports (Domain Repositories)<br/>UserRepository, PartnerRepository<br/>RoleRepository, CompanyRepository"]
-        DOMAIN_EVENTS["Domain Events<br/>RoleCreateEvent, UserCreateEvent<br/>GroupUpdateEvent"]
+        DOMAIN_EVENTS["Domain Events<br/>RoleCreatedEvent, UserCreatedEvent<br/>GroupUpdatedEvent"]
     end
 
     subgraph Infrastructure_Layer ["Outbound Adapters (Infrastructure Layer)"]

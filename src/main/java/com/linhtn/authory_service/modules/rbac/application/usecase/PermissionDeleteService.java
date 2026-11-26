@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.linhtn.authory_service.modules.rbac.application.port.in.PermissionDeleteUseCase;
-import com.linhtn.authory_service.modules.rbac.domain.event.PermissionDeleteEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.PermissionDeletedEvent;
 import com.linhtn.authory_service.modules.rbac.domain.model.Permission;
 import com.linhtn.authory_service.modules.rbac.domain.repository.PermissionRepository;
 import com.linhtn.authory_service.modules.rbac.exception.error.PermissionError;
@@ -48,6 +48,6 @@ public class PermissionDeleteService implements PermissionDeleteUseCase {
                                                                 .getMessage(),
                                                         id)));
         permissionRepository.delete(id);
-        eventPublisher.publishEvent(new PermissionDeleteEvent(model));
+        eventPublisher.publishEvent(new PermissionDeletedEvent(model));
     }
 }

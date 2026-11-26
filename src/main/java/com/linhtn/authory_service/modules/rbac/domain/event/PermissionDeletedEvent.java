@@ -7,6 +7,6 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class PermissionCreateEvent {
+public class PermissionDeletedEvent {
     private final Permission permission;
 }

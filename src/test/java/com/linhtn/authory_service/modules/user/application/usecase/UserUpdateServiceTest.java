@@ -19,7 +19,7 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import com.linhtn.authory_service.modules.user.application.dto.command.UserUpdateCommand;
 import com.linhtn.authory_service.modules.user.application.dto.result.UserUpdateResult;
-import com.linhtn.authory_service.modules.user.domain.event.UserUpdateEvent;
+import com.linhtn.authory_service.modules.user.domain.event.UserUpdatedEvent;
 import com.linhtn.authory_service.modules.user.domain.model.User;
 import com.linhtn.authory_service.modules.user.domain.repository.UserRepository;
 import com.linhtn.authory_service.modules.user.exception.unchecked.UserNotFoundException;
@@ -40,7 +40,7 @@ class UserUpdateServiceTest {
     }
 
     @Test
-    @DisplayName("Should successfully update user and publish UserUpdateEvent")
+    @DisplayName("Should successfully update user and publish UserUpdatedEvent")
     void shouldUpdateUserSuccessfully() {
         UUID userId = UUID.randomUUID();
         User existingUser =
@@ -69,7 +69,7 @@ class UserUpdateServiceTest {
         assertThat(result.getEmail()).isEqualTo("new@example.com");
         assertThat(result.getFirstName()).isEqualTo("New");
         verify(userRepository).update(existingUser);
-        verify(eventPublisher).publishEvent(any(UserUpdateEvent.class));
+        verify(eventPublisher).publishEvent(any(UserUpdatedEvent.class));
     }
 
     @Test

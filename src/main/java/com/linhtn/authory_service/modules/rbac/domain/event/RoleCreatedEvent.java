@@ -7,6 +7,6 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class RoleUpdateEvent {
+public class RoleCreatedEvent {
     private final Role role;
 }

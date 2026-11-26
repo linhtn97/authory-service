@@ -20,7 +20,7 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import com.linhtn.authory_service.modules.rbac.application.dto.command.RoleUpdateCommand;
 import com.linhtn.authory_service.modules.rbac.application.dto.result.RoleUpdateResult;
-import com.linhtn.authory_service.modules.rbac.domain.event.RoleUpdateEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.RoleUpdatedEvent;
 import com.linhtn.authory_service.modules.rbac.domain.model.Role;
 import com.linhtn.authory_service.modules.rbac.domain.repository.RoleRepository;
 import com.linhtn.authory_service.modules.rbac.exception.unchecked.RoleNotFoundException;
@@ -41,7 +41,7 @@ class RoleUpdateServiceTest {
     }
 
     @Test
-    @DisplayName("Should successfully update role and publish RoleUpdateEvent")
+    @DisplayName("Should successfully update role and publish RoleUpdatedEvent")
     void shouldUpdateRoleSuccessfully() {
         UUID roleId = UUID.randomUUID();
         Role existing = Role.builder().id(roleId).code("ROLE_USER").name("User").build();
@@ -56,7 +56,7 @@ class RoleUpdateServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.getName()).isEqualTo("Updated User");
         verify(roleRepository).update(existing);
-        verify(eventPublisher).publishEvent(any(RoleUpdateEvent.class));
+        verify(eventPublisher).publishEvent(any(RoleUpdatedEvent.class));
     }
 
     @Test

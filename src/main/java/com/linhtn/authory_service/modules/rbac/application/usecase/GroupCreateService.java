@@ -8,7 +8,7 @@ import com.linhtn.authory_service.modules.rbac.application.dto.command.GroupCrea
 import com.linhtn.authory_service.modules.rbac.application.dto.result.GroupCreateResult;
 import com.linhtn.authory_service.modules.rbac.application.mapper.GroupApplicationMapper;
 import com.linhtn.authory_service.modules.rbac.application.port.in.GroupCreateUseCase;
-import com.linhtn.authory_service.modules.rbac.domain.event.GroupCreateEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.GroupCreatedEvent;
 import com.linhtn.authory_service.modules.rbac.domain.model.Group;
 import com.linhtn.authory_service.modules.rbac.domain.repository.GroupRepository;
 
@@ -32,7 +32,7 @@ public class GroupCreateService implements GroupCreateUseCase {
         log.info("Creating Group with code: {}", command.getCode());
         Group model = GroupApplicationMapper.toDomain(command);
         Group created = groupRepository.create(model);
-        eventPublisher.publishEvent(new GroupCreateEvent(created));
+        eventPublisher.publishEvent(new GroupCreatedEvent(created));
         return GroupApplicationMapper.toCreateResult(created);
     }
 }

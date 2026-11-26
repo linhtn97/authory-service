@@ -17,7 +17,7 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import com.linhtn.authory_service.modules.rbac.application.dto.command.RoleCreateCommand;
 import com.linhtn.authory_service.modules.rbac.application.dto.result.RoleCreateResult;
-import com.linhtn.authory_service.modules.rbac.domain.event.RoleCreateEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.RoleCreatedEvent;
 import com.linhtn.authory_service.modules.rbac.domain.model.Role;
 import com.linhtn.authory_service.modules.rbac.domain.repository.RoleRepository;
 
@@ -35,7 +35,7 @@ class RoleCreateServiceTest {
     }
 
     @Test
-    @DisplayName("Should successfully create a role and publish RoleCreateEvent")
+    @DisplayName("Should successfully create a role and publish RoleCreatedEvent")
     void shouldCreateRoleSuccessfully() {
         UUID roleId = UUID.randomUUID();
         RoleCreateCommand command =
@@ -51,6 +51,6 @@ class RoleCreateServiceTest {
         assertThat(result.getId()).isEqualTo(roleId);
         assertThat(result.getCode()).isEqualTo("ROLE_MANAGER");
         verify(roleRepository).create(any(Role.class));
-        verify(eventPublisher).publishEvent(any(RoleCreateEvent.class));
+        verify(eventPublisher).publishEvent(any(RoleCreatedEvent.class));
     }
 }

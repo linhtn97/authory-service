@@ -34,7 +34,7 @@ Authory Service is designed as a **Modular Monolith** using **Hexagonal Architec
 - **Typical Components:**
   - `domain/model/`: Pure business models (e.g. `User`, `Role`, `Partner`).
   - `domain/repository/`: Outbound repository ports (e.g. `UserRepository`, `RoleRepository`).
-  - `domain/event/`: Domain lifecycle events (e.g. `UserCreateEvent`, `RoleCreateEvent`).
+  - `domain/event/`: Domain lifecycle events (e.g. `UserCreatedEvent`, `RoleCreatedEvent`).
 
 ### 2.2 Application Layer (`modules/<feature>/application/`)
 - **Responsibility:** Implements and coordinates application use cases and business workflows.
@@ -117,7 +117,7 @@ src/main/java/com/linhtn/authory_service/modules/<feature>/
 | :--- | :--- | :--- |
 | **Domain Model** | Bare entity name | `User`, `Role`, `Partner` |
 | **Domain Repository Port** | `*Repository` | `UserRepository`, `RoleRepository` |
-| **Domain Event** | `*<Action>Event` | `UserCreateEvent`, `RoleDeleteEvent` |
+| **Domain Event** | `*<Action>Event` | `UserCreatedEvent`, `RoleDeletedEvent` |
 | **Inbound Port (Use Case)** | `*<Action>UseCase` | `UserCreateUseCase`, `UserGetPageUseCase` |
 | **Use Case Service** | `*<Action>Service` | `UserCreateService`, `UserGetPageService` |
 | **Application Command** | `*<Action>Command` | `UserCreateCommand`, `UserUpdateCommand` |

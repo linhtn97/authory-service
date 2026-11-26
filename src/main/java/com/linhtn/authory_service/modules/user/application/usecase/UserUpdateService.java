@@ -10,7 +10,7 @@ import com.linhtn.authory_service.modules.user.application.dto.command.UserUpdat
 import com.linhtn.authory_service.modules.user.application.dto.result.UserUpdateResult;
 import com.linhtn.authory_service.modules.user.application.mapper.UserApplicationMapper;
 import com.linhtn.authory_service.modules.user.application.port.in.UserUpdateUseCase;
-import com.linhtn.authory_service.modules.user.domain.event.UserUpdateEvent;
+import com.linhtn.authory_service.modules.user.domain.event.UserUpdatedEvent;
 import com.linhtn.authory_service.modules.user.domain.model.User;
 import com.linhtn.authory_service.modules.user.domain.repository.UserRepository;
 import com.linhtn.authory_service.modules.user.exception.error.UserError;
@@ -53,7 +53,7 @@ public class UserUpdateService implements UserUpdateUseCase {
         UserApplicationMapper.updateDomain(existingUser, command);
         User updatedUser = userRepository.update(existingUser);
 
-        eventPublisher.publishEvent(new UserUpdateEvent(updatedUser));
+        eventPublisher.publishEvent(new UserUpdatedEvent(updatedUser));
         log.info("Successfully updated user with ID: {}", updatedUser.getId());
         return UserApplicationMapper.toUpdateResult(updatedUser);
     }

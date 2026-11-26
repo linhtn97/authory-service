@@ -18,7 +18,7 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import com.linhtn.authory_service.modules.user.application.dto.command.UserCreateCommand;
 import com.linhtn.authory_service.modules.user.application.dto.result.UserCreateResult;
-import com.linhtn.authory_service.modules.user.domain.event.UserCreateEvent;
+import com.linhtn.authory_service.modules.user.domain.event.UserCreatedEvent;
 import com.linhtn.authory_service.modules.user.domain.model.User;
 import com.linhtn.authory_service.modules.user.domain.repository.UserRepository;
 import com.linhtn.authory_service.modules.user.exception.unchecked.UserAlreadyExistsException;
@@ -39,7 +39,7 @@ class UserCreateServiceTest {
     }
 
     @Test
-    @DisplayName("Should successfully create a user and publish UserCreateEvent")
+    @DisplayName("Should successfully create a user and publish UserCreatedEvent")
     void shouldCreateUserSuccessfully() {
         UserCreateCommand command =
                 UserCreateCommand.builder()
@@ -68,7 +68,7 @@ class UserCreateServiceTest {
         assertThat(result.getEmail()).isEqualTo("john@example.com");
 
         verify(userRepository).create(any(User.class));
-        verify(eventPublisher).publishEvent(any(UserCreateEvent.class));
+        verify(eventPublisher).publishEvent(any(UserCreatedEvent.class));
     }
 
     @Test

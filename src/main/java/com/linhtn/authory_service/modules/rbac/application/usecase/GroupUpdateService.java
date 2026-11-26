@@ -12,7 +12,7 @@ import com.linhtn.authory_service.modules.rbac.application.dto.command.GroupUpda
 import com.linhtn.authory_service.modules.rbac.application.dto.result.GroupUpdateResult;
 import com.linhtn.authory_service.modules.rbac.application.mapper.GroupApplicationMapper;
 import com.linhtn.authory_service.modules.rbac.application.port.in.GroupUpdateUseCase;
-import com.linhtn.authory_service.modules.rbac.domain.event.GroupUpdateEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.GroupUpdatedEvent;
 import com.linhtn.authory_service.modules.rbac.domain.model.Group;
 import com.linhtn.authory_service.modules.rbac.domain.repository.GroupRepository;
 import com.linhtn.authory_service.modules.rbac.exception.error.GroupError;
@@ -58,7 +58,7 @@ public class GroupUpdateService implements GroupUpdateUseCase {
                                                         id)));
         GroupApplicationMapper.updateDomain(existing, command);
         Group updated = groupRepository.update(existing);
-        eventPublisher.publishEvent(new GroupUpdateEvent(updated));
+        eventPublisher.publishEvent(new GroupUpdatedEvent(updated));
         return GroupApplicationMapper.toUpdateResult(updated);
     }
 }

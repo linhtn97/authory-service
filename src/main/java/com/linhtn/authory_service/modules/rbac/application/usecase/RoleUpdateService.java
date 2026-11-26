@@ -12,7 +12,7 @@ import com.linhtn.authory_service.modules.rbac.application.dto.command.RoleUpdat
 import com.linhtn.authory_service.modules.rbac.application.dto.result.RoleUpdateResult;
 import com.linhtn.authory_service.modules.rbac.application.mapper.RoleApplicationMapper;
 import com.linhtn.authory_service.modules.rbac.application.port.in.RoleUpdateUseCase;
-import com.linhtn.authory_service.modules.rbac.domain.event.RoleUpdateEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.RoleUpdatedEvent;
 import com.linhtn.authory_service.modules.rbac.domain.model.Role;
 import com.linhtn.authory_service.modules.rbac.domain.repository.RoleRepository;
 import com.linhtn.authory_service.modules.rbac.exception.error.RoleError;
@@ -57,7 +57,7 @@ public class RoleUpdateService implements RoleUpdateUseCase {
         RoleApplicationMapper.updateDomain(entity, command);
         Role saved = roleRepository.update(entity);
 
-        eventPublisher.publishEvent(new RoleUpdateEvent(saved));
+        eventPublisher.publishEvent(new RoleUpdatedEvent(saved));
 
         return RoleApplicationMapper.toUpdateResult(saved);
     }

@@ -8,7 +8,7 @@ import com.linhtn.authory_service.modules.user.application.dto.command.UserCreat
 import com.linhtn.authory_service.modules.user.application.dto.result.UserCreateResult;
 import com.linhtn.authory_service.modules.user.application.mapper.UserApplicationMapper;
 import com.linhtn.authory_service.modules.user.application.port.in.UserCreateUseCase;
-import com.linhtn.authory_service.modules.user.domain.event.UserCreateEvent;
+import com.linhtn.authory_service.modules.user.domain.event.UserCreatedEvent;
 import com.linhtn.authory_service.modules.user.domain.model.User;
 import com.linhtn.authory_service.modules.user.domain.repository.UserRepository;
 import com.linhtn.authory_service.modules.user.exception.error.UserError;
@@ -47,7 +47,7 @@ public class UserCreateService implements UserCreateUseCase {
         User user = UserApplicationMapper.toDomain(command);
         User createdUser = userRepository.create(user);
 
-        eventPublisher.publishEvent(new UserCreateEvent(createdUser));
+        eventPublisher.publishEvent(new UserCreatedEvent(createdUser));
         log.info("Successfully created user with ID: {}", createdUser.getId());
         return UserApplicationMapper.toCreateResult(createdUser);
     }

@@ -67,10 +67,10 @@ All critical mutations across the system publish domain events via Spring's `App
 ```mermaid
 graph TD
     Service[Application Services] -->|Publishes Event| Publisher[ApplicationEventPublisher]
-    Publisher -->|UserCreateEvent| Listener[SystemActivityListener]
-    Publisher -->|RoleCreateEvent| Listener
-    Publisher -->|GroupUpdateEvent| Listener
-    Publisher -->|PermissionDeleteEvent| Listener
+    Publisher -->|UserCreatedEvent| Listener[SystemActivityListener]
+    Publisher -->|RoleCreatedEvent| Listener
+    Publisher -->|GroupUpdatedEvent| Listener
+    Publisher -->|PermissionDeletedEvent| Listener
     Listener -->|Formats & Persists| ActivityAdapter[SystemActivityRepositoryAdapter]
     ActivityAdapter --> DB[(auth.system_activities)]
 ```

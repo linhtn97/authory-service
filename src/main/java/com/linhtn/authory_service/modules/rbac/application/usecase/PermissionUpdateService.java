@@ -10,7 +10,7 @@ import com.linhtn.authory_service.modules.rbac.application.dto.command.Permissio
 import com.linhtn.authory_service.modules.rbac.application.dto.result.PermissionUpdateResult;
 import com.linhtn.authory_service.modules.rbac.application.mapper.PermissionApplicationMapper;
 import com.linhtn.authory_service.modules.rbac.application.port.in.PermissionUpdateUseCase;
-import com.linhtn.authory_service.modules.rbac.domain.event.PermissionUpdateEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.PermissionUpdatedEvent;
 import com.linhtn.authory_service.modules.rbac.domain.model.Permission;
 import com.linhtn.authory_service.modules.rbac.domain.repository.PermissionRepository;
 import com.linhtn.authory_service.modules.rbac.exception.error.PermissionError;
@@ -52,7 +52,7 @@ public class PermissionUpdateService implements PermissionUpdateUseCase {
                                                         id)));
         PermissionApplicationMapper.updateDomain(existing, command);
         Permission updated = permissionRepository.update(existing);
-        eventPublisher.publishEvent(new PermissionUpdateEvent(updated));
+        eventPublisher.publishEvent(new PermissionUpdatedEvent(updated));
         return PermissionApplicationMapper.toUpdateResult(updated);
     }
 }

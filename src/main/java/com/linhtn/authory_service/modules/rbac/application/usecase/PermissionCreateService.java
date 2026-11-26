@@ -8,7 +8,7 @@ import com.linhtn.authory_service.modules.rbac.application.dto.command.Permissio
 import com.linhtn.authory_service.modules.rbac.application.dto.result.PermissionCreateResult;
 import com.linhtn.authory_service.modules.rbac.application.mapper.PermissionApplicationMapper;
 import com.linhtn.authory_service.modules.rbac.application.port.in.PermissionCreateUseCase;
-import com.linhtn.authory_service.modules.rbac.domain.event.PermissionCreateEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.PermissionCreatedEvent;
 import com.linhtn.authory_service.modules.rbac.domain.model.Permission;
 import com.linhtn.authory_service.modules.rbac.domain.repository.PermissionRepository;
 
@@ -32,7 +32,7 @@ public class PermissionCreateService implements PermissionCreateUseCase {
         log.info("Creating Permission with code: {}", command.getCode());
         Permission model = PermissionApplicationMapper.toDomain(command);
         Permission created = permissionRepository.create(model);
-        eventPublisher.publishEvent(new PermissionCreateEvent(created));
+        eventPublisher.publishEvent(new PermissionCreatedEvent(created));
         return PermissionApplicationMapper.toCreateResult(created);
     }
 }

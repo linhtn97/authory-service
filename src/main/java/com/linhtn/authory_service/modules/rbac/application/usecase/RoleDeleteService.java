@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.linhtn.authory_service.modules.rbac.application.port.in.RoleDeleteUseCase;
-import com.linhtn.authory_service.modules.rbac.domain.event.RoleDeleteEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.RoleDeletedEvent;
 import com.linhtn.authory_service.modules.rbac.domain.model.Role;
 import com.linhtn.authory_service.modules.rbac.domain.repository.RoleRepository;
 import com.linhtn.authory_service.modules.rbac.exception.error.RoleError;
@@ -54,6 +54,6 @@ public class RoleDeleteService implements RoleDeleteUseCase {
                                                         RoleError.ROLE_NOT_FOUND.getMessage(),
                                                         id)));
         roleRepository.delete(id);
-        eventPublisher.publishEvent(new RoleDeleteEvent(model));
+        eventPublisher.publishEvent(new RoleDeletedEvent(model));
     }
 }

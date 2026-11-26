@@ -16,7 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
-import com.linhtn.authory_service.modules.user.domain.event.UserDeleteEvent;
+import com.linhtn.authory_service.modules.user.domain.event.UserDeletedEvent;
 import com.linhtn.authory_service.modules.user.domain.model.User;
 import com.linhtn.authory_service.modules.user.domain.repository.UserRepository;
 import com.linhtn.authory_service.modules.user.exception.unchecked.UserNotFoundException;
@@ -37,7 +37,7 @@ class UserDeleteServiceTest {
     }
 
     @Test
-    @DisplayName("Should successfully delete user and publish UserDeleteEvent")
+    @DisplayName("Should successfully delete user and publish UserDeletedEvent")
     void shouldDeleteUserSuccessfully() {
         UUID userId = UUID.randomUUID();
         User user = User.builder().id(userId).username("johndoe").build();
@@ -47,7 +47,7 @@ class UserDeleteServiceTest {
         service.execute(userId);
 
         verify(userRepository).delete(userId);
-        verify(eventPublisher).publishEvent(any(UserDeleteEvent.class));
+        verify(eventPublisher).publishEvent(any(UserDeletedEvent.class));
     }
 
     @Test

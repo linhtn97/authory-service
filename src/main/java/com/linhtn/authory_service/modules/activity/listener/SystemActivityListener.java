@@ -8,18 +8,18 @@ import org.springframework.stereotype.Component;
 
 import com.linhtn.authory_service.modules.activity.domain.model.SystemActivity;
 import com.linhtn.authory_service.modules.activity.domain.repository.SystemActivityRepository;
-import com.linhtn.authory_service.modules.rbac.domain.event.GroupCreateEvent;
-import com.linhtn.authory_service.modules.rbac.domain.event.GroupDeleteEvent;
-import com.linhtn.authory_service.modules.rbac.domain.event.GroupUpdateEvent;
-import com.linhtn.authory_service.modules.rbac.domain.event.PermissionCreateEvent;
-import com.linhtn.authory_service.modules.rbac.domain.event.PermissionDeleteEvent;
-import com.linhtn.authory_service.modules.rbac.domain.event.PermissionUpdateEvent;
-import com.linhtn.authory_service.modules.rbac.domain.event.RoleCreateEvent;
-import com.linhtn.authory_service.modules.rbac.domain.event.RoleDeleteEvent;
-import com.linhtn.authory_service.modules.rbac.domain.event.RoleUpdateEvent;
-import com.linhtn.authory_service.modules.user.domain.event.UserCreateEvent;
-import com.linhtn.authory_service.modules.user.domain.event.UserDeleteEvent;
-import com.linhtn.authory_service.modules.user.domain.event.UserUpdateEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.GroupCreatedEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.GroupDeletedEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.GroupUpdatedEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.PermissionCreatedEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.PermissionDeletedEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.PermissionUpdatedEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.RoleCreatedEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.RoleDeletedEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.RoleUpdatedEvent;
+import com.linhtn.authory_service.modules.user.domain.event.UserCreatedEvent;
+import com.linhtn.authory_service.modules.user.domain.event.UserDeletedEvent;
+import com.linhtn.authory_service.modules.user.domain.event.UserUpdatedEvent;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +34,7 @@ public class SystemActivityListener {
     // --- User events ---
     @Async
     @EventListener
-    public void handleUserCreate(UserCreateEvent event) {
+    public void handleUserCreate(UserCreatedEvent event) {
         var user = event.getUser();
         saveActivity(
                 "User <b>" + user.getUsername() + "</b> was created",
@@ -45,7 +45,7 @@ public class SystemActivityListener {
 
     @Async
     @EventListener
-    public void handleUserUpdate(UserUpdateEvent event) {
+    public void handleUserUpdate(UserUpdatedEvent event) {
         var user = event.getUser();
         saveActivity(
                 "User <b>" + user.getUsername() + "</b> was updated",
@@ -56,7 +56,7 @@ public class SystemActivityListener {
 
     @Async
     @EventListener
-    public void handleUserDelete(UserDeleteEvent event) {
+    public void handleUserDelete(UserDeletedEvent event) {
         var user = event.getUser();
         saveActivity(
                 "User <b>" + user.getUsername() + "</b> was deleted",
@@ -68,7 +68,7 @@ public class SystemActivityListener {
     // --- Role events ---
     @Async
     @EventListener
-    public void handleRoleCreate(RoleCreateEvent event) {
+    public void handleRoleCreate(RoleCreatedEvent event) {
         var role = event.getRole();
         saveActivity(
                 "Role <b>" + role.getName() + "</b> was created",
@@ -79,7 +79,7 @@ public class SystemActivityListener {
 
     @Async
     @EventListener
-    public void handleRoleUpdate(RoleUpdateEvent event) {
+    public void handleRoleUpdate(RoleUpdatedEvent event) {
         var role = event.getRole();
         saveActivity(
                 "Role <b>" + role.getName() + "</b> was updated",
@@ -90,7 +90,7 @@ public class SystemActivityListener {
 
     @Async
     @EventListener
-    public void handleRoleDelete(RoleDeleteEvent event) {
+    public void handleRoleDelete(RoleDeletedEvent event) {
         var role = event.getRole();
         saveActivity(
                 "Role <b>" + role.getName() + "</b> was deleted",
@@ -102,7 +102,7 @@ public class SystemActivityListener {
     // --- Group events ---
     @Async
     @EventListener
-    public void handleGroupCreate(GroupCreateEvent event) {
+    public void handleGroupCreate(GroupCreatedEvent event) {
         var group = event.getGroup();
         saveActivity(
                 "Group <b>" + group.getName() + "</b> was created",
@@ -113,7 +113,7 @@ public class SystemActivityListener {
 
     @Async
     @EventListener
-    public void handleGroupUpdate(GroupUpdateEvent event) {
+    public void handleGroupUpdate(GroupUpdatedEvent event) {
         var group = event.getGroup();
         saveActivity(
                 "Group <b>" + group.getName() + "</b> was updated",
@@ -124,7 +124,7 @@ public class SystemActivityListener {
 
     @Async
     @EventListener
-    public void handleGroupDelete(GroupDeleteEvent event) {
+    public void handleGroupDelete(GroupDeletedEvent event) {
         var group = event.getGroup();
         saveActivity(
                 "Group <b>" + group.getName() + "</b> was deleted",
@@ -136,7 +136,7 @@ public class SystemActivityListener {
     // --- Permission events ---
     @Async
     @EventListener
-    public void handlePermissionCreate(PermissionCreateEvent event) {
+    public void handlePermissionCreate(PermissionCreatedEvent event) {
         var permission = event.getPermission();
         saveActivity(
                 "Permission <b>" + permission.getName() + "</b> was created",
@@ -147,7 +147,7 @@ public class SystemActivityListener {
 
     @Async
     @EventListener
-    public void handlePermissionUpdate(PermissionUpdateEvent event) {
+    public void handlePermissionUpdate(PermissionUpdatedEvent event) {
         var permission = event.getPermission();
         saveActivity(
                 "Permission <b>" + permission.getName() + "</b> was updated",
@@ -158,7 +158,7 @@ public class SystemActivityListener {
 
     @Async
     @EventListener
-    public void handlePermissionDelete(PermissionDeleteEvent event) {
+    public void handlePermissionDelete(PermissionDeletedEvent event) {
         var permission = event.getPermission();
         saveActivity(
                 "Permission <b>" + permission.getName() + "</b> was deleted",

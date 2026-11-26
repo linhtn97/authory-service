@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.linhtn.authory_service.modules.rbac.application.port.in.GroupDeleteUseCase;
-import com.linhtn.authory_service.modules.rbac.domain.event.GroupDeleteEvent;
+import com.linhtn.authory_service.modules.rbac.domain.event.GroupDeletedEvent;
 import com.linhtn.authory_service.modules.rbac.domain.model.Group;
 import com.linhtn.authory_service.modules.rbac.domain.repository.GroupRepository;
 import com.linhtn.authory_service.modules.rbac.exception.error.GroupError;
@@ -54,6 +54,6 @@ public class GroupDeleteService implements GroupDeleteUseCase {
                                                         GroupError.GROUP_NOT_FOUND.getMessage(),
                                                         id)));
         groupRepository.delete(id);
-        eventPublisher.publishEvent(new GroupDeleteEvent(model));
+        eventPublisher.publishEvent(new GroupDeletedEvent(model));
     }
 }

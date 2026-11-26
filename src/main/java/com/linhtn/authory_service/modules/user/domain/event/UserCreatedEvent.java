@@ -7,6 +7,6 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class UserDeleteEvent {
+public class UserCreatedEvent {
     private final User user;
 }

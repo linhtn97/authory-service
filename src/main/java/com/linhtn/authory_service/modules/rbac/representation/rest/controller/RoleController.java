@@ -115,7 +115,7 @@ public class RoleController {
 
     @Operation(
             summary = "Create role",
-            description = "Creates a new security role and publishes RoleCreateEvent.")
+            description = "Creates a new security role and publishes RoleCreatedEvent.")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Role created"),
         @ApiResponse(responseCode = "400", description = "Invalid payload"),

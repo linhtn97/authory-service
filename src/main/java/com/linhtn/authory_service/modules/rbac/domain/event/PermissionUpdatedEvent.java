@@ -1,12 +1,12 @@
 package com.linhtn.authory_service.modules.rbac.domain.event;
 
-import com.linhtn.authory_service.modules.rbac.domain.model.Group;
+import com.linhtn.authory_service.modules.rbac.domain.model.Permission;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class GroupDeleteEvent {
-    private final Group group;
+public class PermissionUpdatedEvent {
+    private final Permission permission;
 }

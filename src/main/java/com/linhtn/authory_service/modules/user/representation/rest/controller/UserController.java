@@ -151,7 +151,7 @@ public class UserController {
 
     @Operation(
             summary = "Create user",
-            description = "Creates a new user identity and publishes UserCreateEvent.")
+            description = "Creates a new user identity and publishes UserCreatedEvent.")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "User created successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid request payload"),
@@ -168,7 +168,7 @@ public class UserController {
     @Operation(
             summary = "Update user details",
             description =
-                    "Updates user profile and publishes UserUpdateEvent. Enforces optimistic locking.")
+                    "Updates user profile and publishes UserUpdatedEvent. Enforces optimistic locking.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "User updated successfully"),
         @ApiResponse(responseCode = "404", description = "User not found"),
@@ -186,7 +186,7 @@ public class UserController {
 
     @Operation(
             summary = "Delete user",
-            description = "Deletes a user account and publishes UserDeleteEvent.")
+            description = "Deletes a user account and publishes UserDeletedEvent.")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "User deleted successfully"),
         @ApiResponse(responseCode = "404", description = "User not found")

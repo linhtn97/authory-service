@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.linhtn.authory_service.modules.user.application.port.in.UserDeleteUseCase;
-import com.linhtn.authory_service.modules.user.domain.event.UserDeleteEvent;
+import com.linhtn.authory_service.modules.user.domain.event.UserDeletedEvent;
 import com.linhtn.authory_service.modules.user.domain.model.User;
 import com.linhtn.authory_service.modules.user.domain.repository.UserRepository;
 import com.linhtn.authory_service.modules.user.exception.error.UserError;
@@ -48,7 +48,7 @@ public class UserDeleteService implements UserDeleteUseCase {
                                                         UserError.USER_NOT_FOUND.getMessage())));
 
         userRepository.delete(id);
-        eventPublisher.publishEvent(new UserDeleteEvent(existingUser));
+        eventPublisher.publishEvent(new UserDeletedEvent(existingUser));
         log.info("Successfully deleted user with ID: {}", id);
     }
 }
