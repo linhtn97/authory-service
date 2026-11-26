@@ -4893,41 +4893,39 @@ components:
   schemas:
     ApiErrorResponse:
       type: object
+      description: Standardized REST API error payload (aligned with RFC 7807 problem details) from be-platform:shared-kernel.
       properties:
-        timestamp:
-          type: string
-          format: date-time
-          example: "2026-11-26T20:50:00Z"
         status:
           type: integer
           example: 400
-        error:
+          description: HTTP status code
+        errorCode:
           type: string
-          example: Bad Request
-        message:
+          example: METHOD_ARGUMENT_NOT_VALID
+          description: Machine-readable error code
+        errorMessage:
           type: string
           example: Validation failed for one or more fields
+          description: Localized human-readable error message
+        errorDetails:
+          type: object
+          nullable: true
+          additionalProperties: true
+          example:
+            email: Email must be a valid email address
+          description: Detailed validation field errors or auxiliary error context
+        timestamp:
+          type: string
+          example: "2026-11-26 20:50:00"
+          description: Timestamp formatted as yyyy-MM-dd HH:mm:ss
         path:
           type: string
           example: /api/v1/users
-        errorCode:
+          description: Target request URI
+        traceId:
           type: string
-          example: ERR_VALIDATION_FAILED
-        correlationId:
-          type: string
-          format: uuid
           example: 11111111-2222-3333-4444-555555555555
-        details:
-          type: array
-          items:
-            type: object
-            properties:
-              field:
-                type: string
-                example: email
-              message:
-                type: string
-                example: Email must be a valid email address
+          description: Distributed tracing / Correlation ID for observability tracking
     PagingRequest:
       type: object
       properties:

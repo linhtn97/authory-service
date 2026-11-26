@@ -113,19 +113,45 @@ All paginated queries return the uniform structure:
 }
 ```
 
-### 3.3 Error Response Envelope (`ApiErrorResponse`)
-When an error occurs, the server returns an `ApiErrorResponse` containing standardized error metadata and correlation ID:
+### 3.3 Standard Error Response Envelope (`ApiErrorResponse`)
+When an error occurs, the server returns an `ApiErrorResponse` standardized from `be-platform:shared-kernel`:
 
 ```json
 {
-  "timestamp": "2026-11-26T20:50:00Z",
   "status": 404,
-  "error": "Not Found",
   "errorCode": "USER_NOT_FOUND",
-  "message": "User not found with identifier: 550e8400-e29b-41d4-a716-446655440000",
+  "errorMessage": "User not found with identifier: 550e8400-e29b-41d4-a716-446655440000",
+  "errorDetails": null,
+  "timestamp": "2026-11-26 20:50:00",
   "path": "/api/v1/users/550e8400-e29b-41d4-a716-446655440000",
-  "correlationId": "e4f9812b-3b8f-49b8-a612-9c1628d052d1",
-  "details": []
+  "traceId": "e4f9812b-3b8f-49b8-a612-9c1628d052d1"
+}
+```
+
+#### Fields Description (`com.linhtn.sharedkernel.representation.ApiErrorResponse`):
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `status` | `Integer` | HTTP status code integer (e.g. `400`, `401`, `404`, `409`, `500`) |
+| `errorCode` | `String` | Machine-readable domain error code (e.g. `USER_NOT_FOUND`, `CONCURRENT_UPDATE_CONFLICT`, `METHOD_ARGUMENT_NOT_VALID`) |
+| `errorMessage` | `String` | Localized, human-readable error description resolved via `MessageResolver` |
+| `errorDetails` | `Object` | Optional structured validation error details (e.g. map of `{ field: "error message" }`) or `null` |
+| `timestamp` | `LocalDateTime` | Timestamp formatted as `yyyy-MM-dd HH:mm:ss` |
+| `path` | `String` | Request URI path where the error occurred |
+| `traceId` | `String` | Distributed tracing / Correlation ID for observability tracking across Jaeger and logs |
+
+#### Validation Error Example:
+```json
+{
+  "status": 400,
+  "errorCode": "METHOD_ARGUMENT_NOT_VALID",
+  "errorMessage": "Validation failed for one or more fields",
+  "errorDetails": {
+    "username": "Username must be between 3 and 50 characters",
+    "email": "Email must be a valid email address"
+  },
+  "timestamp": "2026-11-26 20:50:00",
+  "path": "/api/v1/users",
+  "traceId": "11111111-2222-3333-4444-555555555555"
 }
 ```
 
@@ -140,13 +166,13 @@ Content-Type: application/json
 X-Correlation-Id: e4f9812b-3b8f-49b8-a612-9c1628d052d1
 
 {
-  "timestamp": "2026-11-26T20:51:00Z",
   "status": 409,
-  "error": "Conflict",
   "errorCode": "CONCURRENT_UPDATE_CONFLICT",
-  "message": "The resource was updated concurrently by another request. Please reload latest state.",
+  "errorMessage": "The resource was updated concurrently by another request. Please reload latest state.",
+  "errorDetails": null,
+  "timestamp": "2026-11-26 20:51:00",
   "path": "/api/v1/users/550e8400-e29b-41d4-a716-446655440000",
-  "correlationId": "e4f9812b-3b8f-49b8-a612-9c1628d052d1"
+  "traceId": "e4f9812b-3b8f-49b8-a612-9c1628d052d1"
 }
 ```
 
