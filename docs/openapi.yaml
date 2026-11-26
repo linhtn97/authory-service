@@ -1,0 +1,6336 @@
+openapi: 3.0.3
+info:
+  title: Authory Service API
+  description: "Enterprise Identity, Authentication & Fine-Grained Authorization Microservice. Conforms strictly to RFC 9110, RFC 7517 (JWKS), RFC 6238 (TOTP MFA), and RFC 6750 (OAuth 2.0 Bearer Token). Standardized on be-platform shared-kernel pagination (PagingRequest, PagingResponse) and error responses (ApiErrorResponse)."
+  version: v1.0.0
+  contact:
+    name: Authory Service Team
+    email: "support@linhtn.com"
+servers:
+  - url: "http://localhost:8600"
+    description: Local Development Server
+  - url: /
+    description: Current Host Root
+tags:
+  - name: "Authentication & Sessions"
+    description: "User login, registration, MFA/2FA, password reset, and principal resolution"
+  - name: "Authentication & JWKS"
+    description: JSON Web Key Set (RFC 7517) public key discovery for token verification
+  - name: Active Device Sessions
+    description: "Device tracking, active refresh tokens, and remote session termination"
+  - name: Partner Management
+    description: "B2B multi-tenant partner registration, credential generation, and tenant isolation"
+  - name: User Management
+    description: "User identity lifecycle, account management, pagination, and account unlock"
+  - name: RBAC - Roles
+    description: Security roles management with hierarchical authority associations
+  - name: RBAC - Role Permissions
+    description: Binding and revoking permissions to/from security roles
+  - name: RBAC - Permissions
+    description: Granular permissions catalog across system actions and resources
+  - name: RBAC - Groups
+    description: User group categorization and collective authority administration
+  - name: RBAC - Group Permissions
+    description: Binding and revoking permissions to/from user groups
+  - name: RBAC - Resources
+    description: Secured resource definitions and URI path patterns
+  - name: RBAC - Resource Permissions
+    description: Binding permissions to specific protected resources
+  - name: RBAC - User Roles
+    description: Assigning and querying security roles on users
+  - name: RBAC - User Groups
+    description: Assigning and querying user group memberships
+  - name: RBAC - User Resources
+    description: Direct resource assignments and authorizations on users
+  - name: ABAC - Attributes
+    description: "Dynamic subject, resource, and environment attribute schema definitions"
+  - name: ABAC - User Attributes
+    description: Assigning and querying custom attribute values on users
+  - name: ABAC - Policy Evaluation
+    description: Dynamic Policy Decision Point (PDP) evaluating SpEL rules over attributes
+  - name: Organization - Companies
+    description: Root corporate entity management in enterprise multi-level hierarchy
+  - name: Organization - Branches
+    description: Regional branch office management
+  - name: Organization - Centers
+    description: Operational center management
+  - name: Organization - Divisions
+    description: Corporate business division management
+  - name: Organization - Departments
+    description: Departmental unit management
+  - name: Organization - Positions
+    description: Job position and title classification
+  - name: Dashboard Overview
+    description: "System-wide metrics, active session counts, and audit activity summaries"
+paths:
+  /api/v1/auth/register:
+    post:
+      tags:
+        - "Authentication & Sessions"
+      summary: Register new user account
+      description: Creates a new user profile with encoded password and default state.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        201:
+          description: User successfully registered
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/auth/login:
+    post:
+      tags:
+        - "Authentication & Sessions"
+      summary: User login with credentials
+      description: "Authenticates user via username and password. Issues stateless JWT access & refresh tokens or temporary token if MFA is enabled."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthLoginRequest"
+      responses:
+        200:
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthLoginResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        423:
+          description: Account locked due to consecutive failed attempts
+  /api/v1/auth/mfa/verify:
+    post:
+      tags:
+        - "Authentication & Sessions"
+      summary: Verify 2FA TOTP code
+      description: Completes 2-step authentication using the temporary JWT and a 6-digit TOTP code (RFC 6238).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MfaVerifyRequest"
+      responses:
+        200:
+          description: "MFA verified, tokens issued"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthLoginResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/auth/mfa/setup:
+    post:
+      tags:
+        - "Authentication & Sessions"
+      summary: Initiate MFA / 2FA setup
+      description: Generates a new RFC 6238 TOTP shared secret and QR code URI for authenticator apps.
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: MFA setup initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MfaSetupResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/auth/mfa/enable:
+    post:
+      tags:
+        - "Authentication & Sessions"
+      summary: Verify initial TOTP and enable 2FA
+      description: Verifies the first TOTP code generated by user to confirm setup and activate MFA.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MfaEnableRequest"
+      responses:
+        200:
+          description: MFA enabled successfully
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/auth/mfa/disable:
+    post:
+      tags:
+        - "Authentication & Sessions"
+      summary: Disable 2FA
+      description: Disables MFA after verifying user password and current TOTP code.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MfaDisableRequest"
+      responses:
+        200:
+          description: MFA disabled successfully
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/auth/forgot-password:
+    post:
+      tags:
+        - "Authentication & Sessions"
+      summary: Request password reset
+      description: Sends a password reset email containing a time-limited token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordRequest"
+      responses:
+        200:
+          description: Password reset email sent if account exists
+  /api/v1/auth/reset-password:
+    post:
+      tags:
+        - "Authentication & Sessions"
+      summary: Reset password using token
+      description: Updates account password with the provided reset token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordRequest"
+      responses:
+        200:
+          description: Password successfully reset
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/auth/logout:
+    get:
+      tags:
+        - "Authentication & Sessions"
+      summary: Logout user
+      description: Revokes the current JWT access token via Redis/in-memory blacklist and invalidates the session.
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: User successfully logged out
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/auth/refresh-token:
+    get:
+      tags:
+        - "Authentication & Sessions"
+      summary: Refresh access token
+      description: Issues a new JWT access token using the unrevoked refresh token.
+      parameters:
+        - name: refreshToken
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: New tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthLoginResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/auth/principal:
+    get:
+      tags:
+        - "Authentication & Sessions"
+      summary: Resolve user principal by token
+      description: "Resolves current caller identity, assigned roles, permissions, and groups."
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Caller principal resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Principal"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/auth/principal/user:
+    get:
+      tags:
+        - "Authentication & Sessions"
+      summary: Resolve user principal by ID
+      description: Internal query to resolve user authorities by UUID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: User principal resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Principal"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/auth/principal/partner:
+    get:
+      tags:
+        - "Authentication & Sessions"
+      summary: Resolve partner principal via B2B API keys
+      description: Authenticates external partner via Client-Id and Client-Key headers.
+      security:
+        - ClientIdAuth: []
+          ClientKeyAuth: []
+      responses:
+        200:
+          description: Partner principal resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Principal"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/auth/jwks.json:
+    get:
+      tags:
+        - "Authentication & JWKS"
+      summary: Get JSON Web Key Set (RFC 7517)
+      description: Public key set in JWKS format for verifying RS256 signatures.
+      responses:
+        200:
+          description: JWKS document
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  keys:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        kty:
+                          type: string
+                          example: RSA
+                        use:
+                          type: string
+                          example: sig
+                        alg:
+                          type: string
+                          example: RS256
+                        kid:
+                          type: string
+                          example: authory-key-1
+                        n:
+                          type: string
+                        e:
+                          type: string
+                          example: AQAB
+  /.well-known/jwks.json:
+    get:
+      tags:
+        - "Authentication & JWKS"
+      summary: RFC 7517 Well-Known JWKS Endpoint
+      description: Standard OIDC well-known JWKS discovery endpoint.
+      responses:
+        200:
+          description: JWKS document
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  keys:
+                    type: array
+                    items:
+                      type: object
+  /api/v1/auth/sessions:
+    get:
+      tags:
+        - Active Device Sessions
+      summary: List all active device sessions
+      description: Retrieves all unrevoked device sessions and refresh tokens for current user.
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Active sessions list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SessionGetResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/auth/sessions/{id}:
+    delete:
+      tags:
+        - Active Device Sessions
+      summary: Revoke specific device session
+      description: Remotely terminates and invalidates a specific device session.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Session UUID
+      responses:
+        204:
+          description: Session successfully revoked
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/auth/sessions/revoke-all:
+    post:
+      tags:
+        - Active Device Sessions
+      summary: Revoke all other active device sessions
+      description: Terminates all active sessions for the user across all other devices.
+      security:
+        - BearerAuth: []
+      responses:
+        204:
+          description: All other sessions revoked
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/dashboard/metrics:
+    get:
+      tags:
+        - Dashboard Overview
+      summary: Get system metrics
+      description: "Aggregates total user count, role count, active sessions, and tenant metrics."
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: System metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardGetMetricsResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/dashboard/recent-activities:
+    get:
+      tags:
+        - Dashboard Overview
+      summary: Get recent system activities
+      description: Retrieves the 20 most recent system audit log entries.
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Recent activity logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SystemActivityGetRecentResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/abac/evaluate:
+    post:
+      tags:
+        - ABAC - Policy Evaluation
+      summary: Evaluate ABAC access policy (PDP)
+      description: Dynamic Policy Decision Point (PDP) evaluating SpEL rules over attributes.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PolicyEvaluationRequest"
+      responses:
+        200:
+          description: Policy evaluation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyEvaluationResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/users:
+    get:
+      tags:
+        - User Management
+      summary: Query users with query parameters
+      description: Retrieves a paginated list of users using simple URL query parameters.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Paginated users list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPageResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - User Management
+      summary: Create user
+      description: Persists a new user record and triggers domain events.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreateRequest"
+      responses:
+        201:
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserCreateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/users/get-page:
+    post:
+      tags:
+        - User Management
+      summary: Dynamic query pagination (POST)
+      description: Advanced criteria pagination for users supporting complex multi-column sorting and filtering.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PagingRequest"
+      responses:
+        200:
+          description: Paginated users matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPageResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/users/{id}:
+    get:
+      tags:
+        - User Management
+      summary: Get user by ID
+      description: Retrieves full details for a specific user by UUID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+      responses:
+        200:
+          description: User details found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserGetResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - User Management
+      summary: Update user details
+      description: Updates user fields. Enforces JPA optimistic locking through version verification.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdateRequest"
+      responses:
+        200:
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserUpdateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - User Management
+      summary: Delete user
+      description: Removes a user record.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+      responses:
+        204:
+          description: User successfully deleted
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/partners:
+    get:
+      tags:
+        - Partner Management
+      summary: Query partners with query parameters
+      description: Retrieves a paginated list of partners using simple URL query parameters.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Paginated partners list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerPageResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - Partner Management
+      summary: Create partner
+      description: Persists a new partner record and triggers domain events.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerCreateRequest"
+      responses:
+        201:
+          description: Partner created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerCreateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/partners/get-page:
+    post:
+      tags:
+        - Partner Management
+      summary: Dynamic query pagination (POST)
+      description: Advanced criteria pagination for partners supporting complex multi-column sorting and filtering.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PagingRequest"
+      responses:
+        200:
+          description: Paginated partners matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerPageResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/partners/{id}:
+    get:
+      tags:
+        - Partner Management
+      summary: Get partner by ID
+      description: Retrieves full details for a specific partner by UUID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Partner UUID
+      responses:
+        200:
+          description: Partner details found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerGetResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - Partner Management
+      summary: Update partner details
+      description: Updates partner fields. Enforces JPA optimistic locking through version verification.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Partner UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerUpdateRequest"
+      responses:
+        200:
+          description: Partner updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerUpdateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - Partner Management
+      summary: Delete partner
+      description: Removes a partner record.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Partner UUID
+      responses:
+        204:
+          description: Partner successfully deleted
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/roles:
+    get:
+      tags:
+        - RBAC - Roles
+      summary: Query roles with query parameters
+      description: Retrieves a paginated list of roles using simple URL query parameters.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Paginated roles list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RolePageResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - RBAC - Roles
+      summary: Create role
+      description: Persists a new role record and triggers domain events.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleCreateRequest"
+      responses:
+        201:
+          description: Role created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleCreateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/roles/get-page:
+    post:
+      tags:
+        - RBAC - Roles
+      summary: Dynamic query pagination (POST)
+      description: Advanced criteria pagination for roles supporting complex multi-column sorting and filtering.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PagingRequest"
+      responses:
+        200:
+          description: Paginated roles matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RolePageResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/roles/{id}:
+    get:
+      tags:
+        - RBAC - Roles
+      summary: Get role by ID
+      description: Retrieves full details for a specific role by UUID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Role UUID
+      responses:
+        200:
+          description: Role details found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleGetResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - RBAC - Roles
+      summary: Update role details
+      description: Updates role fields. Enforces JPA optimistic locking through version verification.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Role UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleUpdateRequest"
+      responses:
+        200:
+          description: Role updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleUpdateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - RBAC - Roles
+      summary: Delete role
+      description: Removes a role record.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Role UUID
+      responses:
+        204:
+          description: Role successfully deleted
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/permissions:
+    get:
+      tags:
+        - RBAC - Permissions
+      summary: Query permissions with query parameters
+      description: Retrieves a paginated list of permissions using simple URL query parameters.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Paginated permissions list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermissionPageResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - RBAC - Permissions
+      summary: Create permission
+      description: Persists a new permission record and triggers domain events.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PermissionCreateRequest"
+      responses:
+        201:
+          description: Permission created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermissionCreateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/permissions/get-page:
+    post:
+      tags:
+        - RBAC - Permissions
+      summary: Dynamic query pagination (POST)
+      description: Advanced criteria pagination for permissions supporting complex multi-column sorting and filtering.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PagingRequest"
+      responses:
+        200:
+          description: Paginated permissions matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermissionPageResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/permissions/{id}:
+    get:
+      tags:
+        - RBAC - Permissions
+      summary: Get permission by ID
+      description: Retrieves full details for a specific permission by UUID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Permission UUID
+      responses:
+        200:
+          description: Permission details found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermissionGetResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - RBAC - Permissions
+      summary: Update permission details
+      description: Updates permission fields. Enforces JPA optimistic locking through version verification.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Permission UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PermissionUpdateRequest"
+      responses:
+        200:
+          description: Permission updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermissionUpdateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - RBAC - Permissions
+      summary: Delete permission
+      description: Removes a permission record.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Permission UUID
+      responses:
+        204:
+          description: Permission successfully deleted
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/groups:
+    get:
+      tags:
+        - RBAC - Groups
+      summary: Query groups with query parameters
+      description: Retrieves a paginated list of groups using simple URL query parameters.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Paginated groups list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupPageResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - RBAC - Groups
+      summary: Create group
+      description: Persists a new group record and triggers domain events.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupCreateRequest"
+      responses:
+        201:
+          description: Group created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupCreateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/groups/get-page:
+    post:
+      tags:
+        - RBAC - Groups
+      summary: Dynamic query pagination (POST)
+      description: Advanced criteria pagination for groups supporting complex multi-column sorting and filtering.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PagingRequest"
+      responses:
+        200:
+          description: Paginated groups matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupPageResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/groups/{id}:
+    get:
+      tags:
+        - RBAC - Groups
+      summary: Get group by ID
+      description: Retrieves full details for a specific group by UUID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Group UUID
+      responses:
+        200:
+          description: Group details found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupGetResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - RBAC - Groups
+      summary: Update group details
+      description: Updates group fields. Enforces JPA optimistic locking through version verification.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Group UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupUpdateRequest"
+      responses:
+        200:
+          description: Group updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupUpdateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - RBAC - Groups
+      summary: Delete group
+      description: Removes a group record.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Group UUID
+      responses:
+        204:
+          description: Group successfully deleted
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/resources:
+    get:
+      tags:
+        - RBAC - Resources
+      summary: Query resources with query parameters
+      description: Retrieves a paginated list of resources using simple URL query parameters.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Paginated resources list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourcePageResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - RBAC - Resources
+      summary: Create resource
+      description: Persists a new resource record and triggers domain events.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourceCreateRequest"
+      responses:
+        201:
+          description: Resource created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceCreateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/resources/get-page:
+    post:
+      tags:
+        - RBAC - Resources
+      summary: Dynamic query pagination (POST)
+      description: Advanced criteria pagination for resources supporting complex multi-column sorting and filtering.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PagingRequest"
+      responses:
+        200:
+          description: Paginated resources matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourcePageResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/resources/{id}:
+    get:
+      tags:
+        - RBAC - Resources
+      summary: Get resource by ID
+      description: Retrieves full details for a specific resource by UUID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Resource UUID
+      responses:
+        200:
+          description: Resource details found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceGetResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - RBAC - Resources
+      summary: Update resource details
+      description: Updates resource fields. Enforces JPA optimistic locking through version verification.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Resource UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourceUpdateRequest"
+      responses:
+        200:
+          description: Resource updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceUpdateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - RBAC - Resources
+      summary: Delete resource
+      description: Removes a resource record.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Resource UUID
+      responses:
+        204:
+          description: Resource successfully deleted
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/attributes:
+    get:
+      tags:
+        - ABAC - Attributes
+      summary: Query attributes with query parameters
+      description: Retrieves a paginated list of attributes using simple URL query parameters.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Paginated attributes list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttributePageResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - ABAC - Attributes
+      summary: Create attribute
+      description: Persists a new attribute record and triggers domain events.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttributeCreateRequest"
+      responses:
+        201:
+          description: Attribute created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttributeCreateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/attributes/get-page:
+    post:
+      tags:
+        - ABAC - Attributes
+      summary: Dynamic query pagination (POST)
+      description: Advanced criteria pagination for attributes supporting complex multi-column sorting and filtering.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PagingRequest"
+      responses:
+        200:
+          description: Paginated attributes matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttributePageResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/attributes/{id}:
+    get:
+      tags:
+        - ABAC - Attributes
+      summary: Get attribute by ID
+      description: Retrieves full details for a specific attribute by UUID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Attribute UUID
+      responses:
+        200:
+          description: Attribute details found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttributeGetResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - ABAC - Attributes
+      summary: Update attribute details
+      description: Updates attribute fields. Enforces JPA optimistic locking through version verification.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Attribute UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttributeUpdateRequest"
+      responses:
+        200:
+          description: Attribute updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttributeUpdateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - ABAC - Attributes
+      summary: Delete attribute
+      description: Removes a attribute record.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Attribute UUID
+      responses:
+        204:
+          description: Attribute successfully deleted
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/companies:
+    get:
+      tags:
+        - Organization - Companies
+      summary: Query companies with query parameters
+      description: Retrieves a paginated list of companies using simple URL query parameters.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Paginated companies list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanyPageResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - Organization - Companies
+      summary: Create company
+      description: Persists a new company record and triggers domain events.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyCreateRequest"
+      responses:
+        201:
+          description: Company created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanyCreateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/companies/get-page:
+    post:
+      tags:
+        - Organization - Companies
+      summary: Dynamic query pagination (POST)
+      description: Advanced criteria pagination for companies supporting complex multi-column sorting and filtering.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PagingRequest"
+      responses:
+        200:
+          description: Paginated companies matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanyPageResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/companies/{id}:
+    get:
+      tags:
+        - Organization - Companies
+      summary: Get company by ID
+      description: Retrieves full details for a specific company by UUID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Company UUID
+      responses:
+        200:
+          description: Company details found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanyGetResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - Organization - Companies
+      summary: Update company details
+      description: Updates company fields. Enforces JPA optimistic locking through version verification.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Company UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyUpdateRequest"
+      responses:
+        200:
+          description: Company updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanyUpdateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - Organization - Companies
+      summary: Delete company
+      description: Removes a company record.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Company UUID
+      responses:
+        204:
+          description: Company successfully deleted
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/branchs:
+    get:
+      tags:
+        - Organization - Branches
+      summary: Query branches with query parameters
+      description: Retrieves a paginated list of branches using simple URL query parameters.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Paginated branches list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchPageResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - Organization - Branches
+      summary: Create branch
+      description: Persists a new branch record and triggers domain events.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BranchCreateRequest"
+      responses:
+        201:
+          description: Branch created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchCreateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/branchs/get-page:
+    post:
+      tags:
+        - Organization - Branches
+      summary: Dynamic query pagination (POST)
+      description: Advanced criteria pagination for branches supporting complex multi-column sorting and filtering.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PagingRequest"
+      responses:
+        200:
+          description: Paginated branches matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchPageResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/branchs/{id}:
+    get:
+      tags:
+        - Organization - Branches
+      summary: Get branch by ID
+      description: Retrieves full details for a specific branch by UUID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Branch UUID
+      responses:
+        200:
+          description: Branch details found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchGetResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - Organization - Branches
+      summary: Update branch details
+      description: Updates branch fields. Enforces JPA optimistic locking through version verification.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Branch UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BranchUpdateRequest"
+      responses:
+        200:
+          description: Branch updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchUpdateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - Organization - Branches
+      summary: Delete branch
+      description: Removes a branch record.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Branch UUID
+      responses:
+        204:
+          description: Branch successfully deleted
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/centers:
+    get:
+      tags:
+        - Organization - Centers
+      summary: Query centers with query parameters
+      description: Retrieves a paginated list of centers using simple URL query parameters.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Paginated centers list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CenterPageResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - Organization - Centers
+      summary: Create center
+      description: Persists a new center record and triggers domain events.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CenterCreateRequest"
+      responses:
+        201:
+          description: Center created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CenterCreateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/centers/get-page:
+    post:
+      tags:
+        - Organization - Centers
+      summary: Dynamic query pagination (POST)
+      description: Advanced criteria pagination for centers supporting complex multi-column sorting and filtering.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PagingRequest"
+      responses:
+        200:
+          description: Paginated centers matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CenterPageResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/centers/{id}:
+    get:
+      tags:
+        - Organization - Centers
+      summary: Get center by ID
+      description: Retrieves full details for a specific center by UUID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Center UUID
+      responses:
+        200:
+          description: Center details found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CenterGetResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - Organization - Centers
+      summary: Update center details
+      description: Updates center fields. Enforces JPA optimistic locking through version verification.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Center UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CenterUpdateRequest"
+      responses:
+        200:
+          description: Center updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CenterUpdateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - Organization - Centers
+      summary: Delete center
+      description: Removes a center record.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Center UUID
+      responses:
+        204:
+          description: Center successfully deleted
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/divisions:
+    get:
+      tags:
+        - Organization - Divisions
+      summary: Query divisions with query parameters
+      description: Retrieves a paginated list of divisions using simple URL query parameters.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Paginated divisions list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DivisionPageResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - Organization - Divisions
+      summary: Create division
+      description: Persists a new division record and triggers domain events.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DivisionCreateRequest"
+      responses:
+        201:
+          description: Division created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DivisionCreateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/divisions/get-page:
+    post:
+      tags:
+        - Organization - Divisions
+      summary: Dynamic query pagination (POST)
+      description: Advanced criteria pagination for divisions supporting complex multi-column sorting and filtering.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PagingRequest"
+      responses:
+        200:
+          description: Paginated divisions matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DivisionPageResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/divisions/{id}:
+    get:
+      tags:
+        - Organization - Divisions
+      summary: Get division by ID
+      description: Retrieves full details for a specific division by UUID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Division UUID
+      responses:
+        200:
+          description: Division details found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DivisionGetResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - Organization - Divisions
+      summary: Update division details
+      description: Updates division fields. Enforces JPA optimistic locking through version verification.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Division UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DivisionUpdateRequest"
+      responses:
+        200:
+          description: Division updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DivisionUpdateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - Organization - Divisions
+      summary: Delete division
+      description: Removes a division record.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Division UUID
+      responses:
+        204:
+          description: Division successfully deleted
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/departments:
+    get:
+      tags:
+        - Organization - Departments
+      summary: Query departments with query parameters
+      description: Retrieves a paginated list of departments using simple URL query parameters.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Paginated departments list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepartmentPageResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - Organization - Departments
+      summary: Create department
+      description: Persists a new department record and triggers domain events.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepartmentCreateRequest"
+      responses:
+        201:
+          description: Department created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepartmentCreateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/departments/get-page:
+    post:
+      tags:
+        - Organization - Departments
+      summary: Dynamic query pagination (POST)
+      description: Advanced criteria pagination for departments supporting complex multi-column sorting and filtering.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PagingRequest"
+      responses:
+        200:
+          description: Paginated departments matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepartmentPageResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/departments/{id}:
+    get:
+      tags:
+        - Organization - Departments
+      summary: Get department by ID
+      description: Retrieves full details for a specific department by UUID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Department UUID
+      responses:
+        200:
+          description: Department details found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepartmentGetResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - Organization - Departments
+      summary: Update department details
+      description: Updates department fields. Enforces JPA optimistic locking through version verification.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Department UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepartmentUpdateRequest"
+      responses:
+        200:
+          description: Department updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepartmentUpdateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - Organization - Departments
+      summary: Delete department
+      description: Removes a department record.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Department UUID
+      responses:
+        204:
+          description: Department successfully deleted
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/positions:
+    get:
+      tags:
+        - Organization - Positions
+      summary: Query positions with query parameters
+      description: Retrieves a paginated list of positions using simple URL query parameters.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Paginated positions list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PositionPageResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - Organization - Positions
+      summary: Create position
+      description: Persists a new position record and triggers domain events.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PositionCreateRequest"
+      responses:
+        201:
+          description: Position created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PositionCreateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/positions/get-page:
+    post:
+      tags:
+        - Organization - Positions
+      summary: Dynamic query pagination (POST)
+      description: Advanced criteria pagination for positions supporting complex multi-column sorting and filtering.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PagingRequest"
+      responses:
+        200:
+          description: Paginated positions matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PositionPageResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/positions/{id}:
+    get:
+      tags:
+        - Organization - Positions
+      summary: Get position by ID
+      description: Retrieves full details for a specific position by UUID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Position UUID
+      responses:
+        200:
+          description: Position details found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PositionGetResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - Organization - Positions
+      summary: Update position details
+      description: Updates position fields. Enforces JPA optimistic locking through version verification.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Position UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PositionUpdateRequest"
+      responses:
+        200:
+          description: Position updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PositionUpdateResponse"
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - Organization - Positions
+      summary: Delete position
+      description: Removes a position record.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Position UUID
+      responses:
+        204:
+          description: Position successfully deleted
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/users/{id}/unlock:
+    post:
+      tags:
+        - User Management
+      summary: Unlock user account
+      description: Resets consecutive failed login attempts and unfreezes account status back to ACTIVE.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+      responses:
+        200:
+          description: Account successfully unlocked
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/users/attributes:
+    get:
+      tags:
+        - ABAC - User Attributes
+      summary: Query user attributes with params
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: User attribute bindings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserAttributePageResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - ABAC - User Attributes
+      summary: Create user attribute binding
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserAttributeCreateRequest"
+      responses:
+        201:
+          description: Binding created
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/users/attributes/get-page:
+    post:
+      tags:
+        - ABAC - User Attributes
+      summary: Dynamic query pagination (POST)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PagingRequest"
+      responses:
+        200:
+          description: Filtered bindings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserAttributePageResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/users/attributes/{id}:
+    get:
+      tags:
+        - ABAC - User Attributes
+      summary: Get user attribute binding by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: User attribute binding
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserAttributeGetResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - ABAC - User Attributes
+      summary: Update user attribute binding
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserAttributeUpdateRequest"
+      responses:
+        200:
+          description: Binding updated
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        409:
+          description: Conflict / Optimistic Lock Failure or Duplicate Unique Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - ABAC - User Attributes
+      summary: Delete user attribute binding
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        204:
+          description: Binding deleted
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/users/attributes/user/{userId}:
+    post:
+      tags:
+        - ABAC - User Attributes
+      summary: Add attribute directly to user by userId
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserAttributeCreateRequest"
+      responses:
+        201:
+          description: Attribute added to user
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/roles/{roleId}/permissions:
+    get:
+      tags:
+        - RBAC - Role Permissions
+      summary: Get permissions assigned to role
+      description: Retrieves all permission IDs currently bound to the specified role.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Role UUID
+      responses:
+        200:
+          description: Set of assigned permission IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - RBAC - Role Permissions
+      summary: Replace permissions of role
+      description: Replaces the entire set of assigned permissions for the role and automatically evicts authority cache.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Role UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        204:
+          description: Associations replaced successfully
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/roles/{roleId}/permissions/{permissionId}:
+    post:
+      tags:
+        - RBAC - Role Permissions
+      summary: Add permission to role
+      description: Binds an individual permission to the role and invalidates cached authorities.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Role UUID
+        - name: permissionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Permission UUID
+      responses:
+        204:
+          description: Association created
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - RBAC - Role Permissions
+      summary: Remove permission from role
+      description: Unbinds an individual permission from the role and invalidates cached authorities.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Role UUID
+        - name: permissionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Permission UUID
+      responses:
+        204:
+          description: Association removed
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/groups/{groupId}/permissions:
+    get:
+      tags:
+        - RBAC - Group Permissions
+      summary: Get permissions assigned to group
+      description: Retrieves all permission IDs currently bound to the specified group.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Group UUID
+      responses:
+        200:
+          description: Set of assigned permission IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - RBAC - Group Permissions
+      summary: Replace permissions of group
+      description: Replaces the entire set of assigned permissions for the group and automatically evicts authority cache.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Group UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        204:
+          description: Associations replaced successfully
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/groups/{groupId}/permissions/{permissionId}:
+    post:
+      tags:
+        - RBAC - Group Permissions
+      summary: Add permission to group
+      description: Binds an individual permission to the group and invalidates cached authorities.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Group UUID
+        - name: permissionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Permission UUID
+      responses:
+        204:
+          description: Association created
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - RBAC - Group Permissions
+      summary: Remove permission from group
+      description: Unbinds an individual permission from the group and invalidates cached authorities.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Group UUID
+        - name: permissionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Permission UUID
+      responses:
+        204:
+          description: Association removed
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/resources/{resourceId}/permissions:
+    get:
+      tags:
+        - RBAC - Resource Permissions
+      summary: Get permissions assigned to resource
+      description: Retrieves all permission IDs currently bound to the specified resource.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Resource UUID
+      responses:
+        200:
+          description: Set of assigned permission IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - RBAC - Resource Permissions
+      summary: Replace permissions of resource
+      description: Replaces the entire set of assigned permissions for the resource and automatically evicts authority cache.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Resource UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        204:
+          description: Associations replaced successfully
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/resources/{resourceId}/permissions/{permissionId}:
+    post:
+      tags:
+        - RBAC - Resource Permissions
+      summary: Add permission to resource
+      description: Binds an individual permission to the resource and invalidates cached authorities.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Resource UUID
+        - name: permissionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Permission UUID
+      responses:
+        204:
+          description: Association created
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - RBAC - Resource Permissions
+      summary: Remove permission from resource
+      description: Unbinds an individual permission from the resource and invalidates cached authorities.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Resource UUID
+        - name: permissionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Permission UUID
+      responses:
+        204:
+          description: Association removed
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/users/{userId}/roles:
+    get:
+      tags:
+        - RBAC - User Roles
+      summary: Get roles assigned to user
+      description: Retrieves all role IDs currently bound to the specified user.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+      responses:
+        200:
+          description: Set of assigned role IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - RBAC - User Roles
+      summary: Replace roles of user
+      description: Replaces the entire set of assigned roles for the user and automatically evicts authority cache.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        204:
+          description: Associations replaced successfully
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/users/{userId}/roles/{roleId}:
+    post:
+      tags:
+        - RBAC - User Roles
+      summary: Add role to user
+      description: Binds an individual role to the user and invalidates cached authorities.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Role UUID
+      responses:
+        204:
+          description: Association created
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - RBAC - User Roles
+      summary: Remove role from user
+      description: Unbinds an individual role from the user and invalidates cached authorities.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Role UUID
+      responses:
+        204:
+          description: Association removed
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/users/{userId}/groups:
+    get:
+      tags:
+        - RBAC - User Groups
+      summary: Get groups assigned to user
+      description: Retrieves all group IDs currently bound to the specified user.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+      responses:
+        200:
+          description: Set of assigned group IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - RBAC - User Groups
+      summary: Replace groups of user
+      description: Replaces the entire set of assigned groups for the user and automatically evicts authority cache.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        204:
+          description: Associations replaced successfully
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/users/{userId}/groups/{groupId}:
+    post:
+      tags:
+        - RBAC - User Groups
+      summary: Add group to user
+      description: Binds an individual group to the user and invalidates cached authorities.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Group UUID
+      responses:
+        204:
+          description: Association created
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - RBAC - User Groups
+      summary: Remove group from user
+      description: Unbinds an individual group from the user and invalidates cached authorities.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Group UUID
+      responses:
+        204:
+          description: Association removed
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/users/{userId}/resources:
+    get:
+      tags:
+        - RBAC - User Resources
+      summary: Get resources assigned to user
+      description: Retrieves all resource IDs currently bound to the specified user.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+      responses:
+        200:
+          description: Set of assigned resource IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - RBAC - User Resources
+      summary: Replace resources of user
+      description: Replaces the entire set of assigned resources for the user and automatically evicts authority cache.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        204:
+          description: Associations replaced successfully
+        400:
+          description: Bad Request / Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/users/{userId}/resources/{resourceId}:
+    post:
+      tags:
+        - RBAC - User Resources
+      summary: Add resource to user
+      description: Binds an individual resource to the user and invalidates cached authorities.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Resource UUID
+      responses:
+        204:
+          description: Association created
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - RBAC - User Resources
+      summary: Remove resource from user
+      description: Unbinds an individual resource from the user and invalidates cached authorities.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Resource UUID
+      responses:
+        204:
+          description: Association removed
+        401:
+          description: Unauthorized / Missing or Invalid JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        404:
+          description: Resource Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Stateless RS256/HS256 JWT issued via /api/v1/auth/login or /api/v1/auth/mfa/verify. Supply as `Bearer <token>`."
+    ClientIdAuth:
+      type: apiKey
+      in: header
+      name: Client-Id
+      description: B2B Partner Client ID header.
+    ClientKeyAuth:
+      type: apiKey
+      in: header
+      name: Client-Key
+      description: B2B Partner Secret Key header.
+  schemas:
+    ApiErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-11-26T20:50:00Z"
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: Bad Request
+        message:
+          type: string
+          example: Validation failed for one or more fields
+        path:
+          type: string
+          example: /api/v1/users
+        errorCode:
+          type: string
+          example: ERR_VALIDATION_FAILED
+        correlationId:
+          type: string
+          format: uuid
+          example: 11111111-2222-3333-4444-555555555555
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: email
+              message:
+                type: string
+                example: Email must be a valid email address
+    PagingRequest:
+      type: object
+      properties:
+        page:
+          type: integer
+          default: 0
+          minimum: 0
+          description: Zero-based page index
+        pageSize:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 500
+          description: Number of records per page
+        quickFilter:
+          type: string
+          description: Universal full-text search term across searchable fields
+        orders:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: createdAt
+              sort:
+                type: string
+                enum:
+                  - asc
+                  - desc
+                default: asc
+        filters:
+          type: array
+          description: Dynamic criterion filter conditions
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: status
+              operator:
+                type: string
+                example: EQUALS
+              value:
+                type: string
+                example: ACTIVE
+    PagingResponseMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 0
+        pageSize:
+          type: integer
+          example: 20
+        totalElements:
+          type: integer
+          example: 100
+        totalPages:
+          type: integer
+          example: 5
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - password
+        - email
+      properties:
+        username:
+          type: string
+          example: johndoe
+        password:
+          type: string
+          format: password
+          example: "Password123!"
+        email:
+          type: string
+          format: email
+          example: "johndoe@example.com"
+        phone:
+          type: string
+          example: "+1234567890"
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+    AuthLoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: admin
+        password:
+          type: string
+          format: password
+          example: "Password123!"
+        deviceName:
+          type: string
+          example: Chrome on macOS
+    AuthLoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: Stateless RS256 JWT access token
+        refreshToken:
+          type: string
+          description: Opaque or signed refresh token for rotation
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: integer
+          example: 3600
+        mfaRequired:
+          type: boolean
+          example: false
+        tempToken:
+          type: string
+          description: Pre-auth token required when MFA is enforced
+    MfaVerifyRequest:
+      type: object
+      required:
+        - tempToken
+        - totpCode
+      properties:
+        tempToken:
+          type: string
+          description: Temporary pre-auth JWT
+        totpCode:
+          type: string
+          example: "123456"
+          description: 6-digit RFC 6238 TOTP code
+    MfaSetupResponse:
+      type: object
+      properties:
+        secret:
+          type: string
+          example: JBSWY3DPEHPK3PXP
+        qrCodeUri:
+          type: string
+          example: "otpauth://totp/Authory:admin?secret=JBSWY3DPEHPK3PXP&issuer=Authory"
+        qrCodeBase64:
+          type: string
+          description: Data URI base64 PNG
+    MfaEnableRequest:
+      type: object
+      required:
+        - totpCode
+      properties:
+        totpCode:
+          type: string
+          example: "123456"
+    MfaDisableRequest:
+      type: object
+      required:
+        - password
+        - totpCode
+      properties:
+        password:
+          type: string
+          format: password
+        totpCode:
+          type: string
+          example: "123456"
+    ForgotPasswordRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+    ResetPasswordRequest:
+      type: object
+      required:
+        - token
+        - newPassword
+      properties:
+        token:
+          type: string
+          example: reset-token-uuid-or-jwt
+        newPassword:
+          type: string
+          format: password
+          example: "NewSecret123!"
+    Principal:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+          example: admin
+        type:
+          type: string
+          enum:
+            - USER
+            - PARTNER
+          example: USER
+        roles:
+          type: array
+          items:
+            type: string
+          example:
+            - ROLE_SUPER_ADMIN
+        permissions:
+          type: array
+          items:
+            type: string
+          example:
+            - "USER:READ"
+            - "USER:WRITE"
+        groups:
+          type: array
+          items:
+            type: string
+          example:
+            - IT_DEPT
+    SessionGetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ipAddress:
+          type: string
+          example: 192.168.1.1
+        userAgent:
+          type: string
+          example: Mozilla/5.0...
+        deviceName:
+          type: string
+          example: Firefox on Linux
+        createdAt:
+          type: string
+          format: date-time
+        expiredAt:
+          type: string
+          format: date-time
+        current:
+          type: boolean
+          example: true
+    PolicyEvaluationRequest:
+      type: object
+      required:
+        - action
+        - resourceType
+      properties:
+        userId:
+          type: string
+          format: uuid
+        action:
+          type: string
+          example: READ
+        resourceType:
+          type: string
+          example: FINANCIAL_REPORT
+        resourceAttributes:
+          type: object
+          additionalProperties: true
+          example:
+            classification: CONFIDENTIAL
+            departmentId: 11111111-2222-3333-4444-555555555555
+        environmentAttributes:
+          type: object
+          additionalProperties: true
+          example:
+            ipAddress: 10.0.0.1
+            requestTime: "14:30:00"
+    PolicyEvaluationResponse:
+      type: object
+      properties:
+        allowed:
+          type: boolean
+          example: true
+        decision:
+          type: string
+          example: PERMIT
+        reason:
+          type: string
+          example: Access permitted by policy Rule-1
+        evaluatedSubjectAttributes:
+          type: object
+          additionalProperties: true
+        matchedRules:
+          type: array
+          items:
+            type: string
+          example:
+            - RULE_IP_ALLOWLIST
+            - RULE_DEPT_MATCH
+    DashboardGetMetricsResponse:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+          example: 1250
+        activeUsers:
+          type: integer
+          example: 1180
+        totalRoles:
+          type: integer
+          example: 15
+        totalPermissions:
+          type: integer
+          example: 120
+        activeSessions:
+          type: integer
+          example: 450
+        totalPartners:
+          type: integer
+          example: 12
+    SystemActivityGetRecentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        action:
+          type: string
+          example: USER_CREATED
+        entityName:
+          type: string
+          example: User
+        entityId:
+          type: string
+          example: 11111111-2222-3333-4444-555555555555
+        performedBy:
+          type: string
+          example: admin
+        performedAt:
+          type: string
+          format: date-time
+        details:
+          type: string
+          example: Created user identity for john.doe
+    UserCreateRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          example: johndoe
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        password:
+          type: string
+          format: password
+          example: "Password123!"
+        phone:
+          type: string
+          example: "+123456789"
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - LOCKED
+            - DISABLED
+          example: ACTIVE
+    UserCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+    UserUpdateRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "john.new@example.com"
+        phone:
+          type: string
+          example: "+1987654321"
+        firstName:
+          type: string
+          example: Johnathan
+        lastName:
+          type: string
+          example: Doe
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - LOCKED
+            - DISABLED
+          example: ACTIVE
+        version:
+          type: integer
+          example: 1
+          description: Optimistic locking version
+    UserUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        updatedAt:
+          type: string
+          format: date-time
+    UserGetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+          example: johndoe
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        phone:
+          type: string
+          example: "+123456789"
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        status:
+          type: string
+          example: ACTIVE
+        mfaEnabled:
+          type: boolean
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          example: 1
+    UserPageResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserGetResponse"
+        meta:
+          $ref: "#/components/schemas/PagingResponseMeta"
+    PartnerCreateRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          example: fintech_partner
+        name:
+          type: string
+          example: Fintech Solutions Ltd
+        email:
+          type: string
+          format: email
+          example: "contact@fintech.example.com"
+        phone:
+          type: string
+          example: "+123456789"
+        address:
+          type: string
+          example: "123 Wall St, NY"
+    PartnerCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+    PartnerUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Fintech Solutions Global
+        email:
+          type: string
+          format: email
+          example: "contact@fintech.example.com"
+        phone:
+          type: string
+          example: "+123456789"
+        address:
+          type: string
+          example: "456 Broadway, NY"
+        status:
+          type: string
+          example: ACTIVE
+        version:
+          type: integer
+          example: 1
+    PartnerUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        updatedAt:
+          type: string
+          format: date-time
+    PartnerGetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+          example: fintech_partner
+        name:
+          type: string
+          example: Fintech Solutions Ltd
+        clientId:
+          type: string
+          example: ptr_1111111122223333
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        address:
+          type: string
+        status:
+          type: string
+          example: ACTIVE
+        createdAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          example: 1
+    PartnerPageResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartnerGetResponse"
+        meta:
+          $ref: "#/components/schemas/PagingResponseMeta"
+    RoleCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: ROLE_AUDITOR
+        code:
+          type: string
+          example: AUDITOR
+        description:
+          type: string
+          example: Audit and compliance reviewer
+    RoleCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+    RoleUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: ROLE_SENIOR_AUDITOR
+        code:
+          type: string
+          example: AUDITOR
+        description:
+          type: string
+          example: Senior audit compliance reviewer
+        version:
+          type: integer
+          example: 1
+    RoleUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        updatedAt:
+          type: string
+          format: date-time
+    RoleGetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: ROLE_AUDITOR
+        code:
+          type: string
+          example: AUDITOR
+        description:
+          type: string
+          example: Audit and compliance reviewer
+        createdAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          example: 1
+    RolePageResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoleGetResponse"
+        meta:
+          $ref: "#/components/schemas/PagingResponseMeta"
+    PermissionCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: REPORT_EXPORT
+        code:
+          type: string
+          example: "REPORT:EXPORT"
+        description:
+          type: string
+          example: Export sensitive reporting documents
+    PermissionCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+    PermissionUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: REPORT_EXPORT
+        code:
+          type: string
+          example: "REPORT:EXPORT"
+        description:
+          type: string
+          example: Updated export description
+        version:
+          type: integer
+          example: 1
+    PermissionUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        updatedAt:
+          type: string
+          format: date-time
+    PermissionGetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: REPORT_EXPORT
+        code:
+          type: string
+          example: "REPORT:EXPORT"
+        description:
+          type: string
+          example: Export sensitive reporting documents
+        createdAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          example: 1
+    PermissionPageResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PermissionGetResponse"
+        meta:
+          $ref: "#/components/schemas/PagingResponseMeta"
+    GroupCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Security Auditors
+        code:
+          type: string
+          example: GRP_AUDIT
+        description:
+          type: string
+          example: Security and governance auditors group
+    GroupCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+    GroupUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Senior Security Auditors
+        code:
+          type: string
+          example: GRP_AUDIT
+        description:
+          type: string
+          example: Updated auditors group
+        version:
+          type: integer
+          example: 1
+    GroupUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        updatedAt:
+          type: string
+          format: date-time
+    GroupGetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Security Auditors
+        code:
+          type: string
+          example: GRP_AUDIT
+        description:
+          type: string
+          example: Security and governance auditors group
+        createdAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          example: 1
+    GroupPageResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroupGetResponse"
+        meta:
+          $ref: "#/components/schemas/PagingResponseMeta"
+    ResourceCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Financial Records API
+        code:
+          type: string
+          example: RES_FINANCE
+        path:
+          type: string
+          example: "/api/v1/finance/**"
+        method:
+          type: string
+          example: GET
+        description:
+          type: string
+          example: Protected financial ledger
+    ResourceCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+    ResourceUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Financial Records API v2
+        code:
+          type: string
+          example: RES_FINANCE
+        path:
+          type: string
+          example: "/api/v1/finance/**"
+        method:
+          type: string
+          example: "*"
+        description:
+          type: string
+          example: Updated protected financial ledger
+        version:
+          type: integer
+          example: 1
+    ResourceUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        updatedAt:
+          type: string
+          format: date-time
+    ResourceGetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Financial Records API
+        code:
+          type: string
+          example: RES_FINANCE
+        path:
+          type: string
+          example: "/api/v1/finance/**"
+        method:
+          type: string
+          example: GET
+        description:
+          type: string
+          example: Protected financial ledger
+        createdAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          example: 1
+    ResourcePageResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResourceGetResponse"
+        meta:
+          $ref: "#/components/schemas/PagingResponseMeta"
+    AttributeCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Clearance Level
+        code:
+          type: string
+          example: clearanceLevel
+        type:
+          type: string
+          enum:
+            - SUBJECT
+            - RESOURCE
+            - ENVIRONMENT
+          example: SUBJECT
+        dataType:
+          type: string
+          enum:
+            - STRING
+            - INTEGER
+            - BOOLEAN
+            - DATE
+          example: INTEGER
+        description:
+          type: string
+          example: Security clearance integer scale
+    AttributeCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+    AttributeUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Clearance Level
+        description:
+          type: string
+          example: Updated security clearance level scale
+        version:
+          type: integer
+          example: 1
+    AttributeUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        updatedAt:
+          type: string
+          format: date-time
+    AttributeGetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Clearance Level
+        code:
+          type: string
+          example: clearanceLevel
+        type:
+          type: string
+          example: SUBJECT
+        dataType:
+          type: string
+          example: INTEGER
+        description:
+          type: string
+          example: Security clearance integer scale
+        createdAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          example: 1
+    AttributePageResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttributeGetResponse"
+        meta:
+          $ref: "#/components/schemas/PagingResponseMeta"
+    CompanyCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Authory Corp Holdings
+        code:
+          type: string
+          example: CORP_HOLDINGS
+        description:
+          type: string
+          example: Primary parent organization entity
+    CompanyCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+    CompanyUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Authory International Holdings
+        description:
+          type: string
+          example: Updated holding entity
+        version:
+          type: integer
+          example: 1
+    CompanyUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        updatedAt:
+          type: string
+          format: date-time
+    CompanyGetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Authory Corp Holdings
+        code:
+          type: string
+          example: CORP_HOLDINGS
+        description:
+          type: string
+          example: Primary parent organization entity
+        createdAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          example: 1
+    CompanyPageResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CompanyGetResponse"
+        meta:
+          $ref: "#/components/schemas/PagingResponseMeta"
+    BranchCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Tokyo Regional Branch
+        code:
+          type: string
+          example: BR_TYO
+        companyId:
+          type: string
+          format: uuid
+    BranchCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+    BranchUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Tokyo HQ Branch
+        version:
+          type: integer
+          example: 1
+    BranchUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        updatedAt:
+          type: string
+          format: date-time
+    BranchGetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Tokyo Regional Branch
+        code:
+          type: string
+          example: BR_TYO
+        companyId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          example: 1
+    BranchPageResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BranchGetResponse"
+        meta:
+          $ref: "#/components/schemas/PagingResponseMeta"
+    CenterCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "R&D Innovation Center"
+        code:
+          type: string
+          example: CTR_RND
+        branchId:
+          type: string
+          format: uuid
+    CenterCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+    CenterUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Advanced R&D Innovation Center"
+        version:
+          type: integer
+          example: 1
+    CenterUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        updatedAt:
+          type: string
+          format: date-time
+    CenterGetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "R&D Innovation Center"
+        code:
+          type: string
+          example: CTR_RND
+        branchId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          example: 1
+    CenterPageResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CenterGetResponse"
+        meta:
+          $ref: "#/components/schemas/PagingResponseMeta"
+    DivisionCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Enterprise Cloud Division
+        code:
+          type: string
+          example: DIV_CLOUD
+        centerId:
+          type: string
+          format: uuid
+    DivisionCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+    DivisionUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Cloud Infrastructure Division
+        version:
+          type: integer
+          example: 1
+    DivisionUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        updatedAt:
+          type: string
+          format: date-time
+    DivisionGetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Enterprise Cloud Division
+        code:
+          type: string
+          example: DIV_CLOUD
+        centerId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          example: 1
+    DivisionPageResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DivisionGetResponse"
+        meta:
+          $ref: "#/components/schemas/PagingResponseMeta"
+    DepartmentCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Identity & Access Engineering"
+        code:
+          type: string
+          example: DEPT_IAM
+        divisionId:
+          type: string
+          format: uuid
+    DepartmentCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+    DepartmentUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Core IAM Engineering
+        version:
+          type: integer
+          example: 1
+    DepartmentUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        updatedAt:
+          type: string
+          format: date-time
+    DepartmentGetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Identity & Access Engineering"
+        code:
+          type: string
+          example: DEPT_IAM
+        divisionId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          example: 1
+    DepartmentPageResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DepartmentGetResponse"
+        meta:
+          $ref: "#/components/schemas/PagingResponseMeta"
+    PositionCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Staff Security Engineer
+        code:
+          type: string
+          example: POS_STAFF_SEC
+        description:
+          type: string
+          example: Lead cybersecurity architect
+    PositionCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+    PositionUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Principal Security Architect
+        version:
+          type: integer
+          example: 1
+    PositionUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        updatedAt:
+          type: string
+          format: date-time
+    PositionGetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Staff Security Engineer
+        code:
+          type: string
+          example: POS_STAFF_SEC
+        description:
+          type: string
+          example: Lead cybersecurity architect
+        createdAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          example: 1
+    PositionPageResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PositionGetResponse"
+        meta:
+          $ref: "#/components/schemas/PagingResponseMeta"
+    UserAttributeCreateRequest:
+      type: object
+      required:
+        - attributeId
+        - value
+      properties:
+        attributeId:
+          type: string
+          format: uuid
+        value:
+          type: string
+          example: "5"
+    UserAttributeUpdateRequest:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          type: string
+          example: "10"
+        version:
+          type: integer
+          example: 1
+    UserAttributeGetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        attributeId:
+          type: string
+          format: uuid
+        attributeCode:
+          type: string
+          example: clearanceLevel
+        value:
+          type: string
+          example: "5"
+        version:
+          type: integer
+          example: 1
+    UserAttributePageResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserAttributeGetResponse"
+        meta:
+          $ref: "#/components/schemas/PagingResponseMeta"
