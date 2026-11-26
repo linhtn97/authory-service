@@ -1,6 +1,6 @@
 package com.linhtn.authory_service.modules.user.exception.unchecked;
 
-import com.linhtn.shared_kernel.common.exception.unchecked.NotFoundException;
+import com.linhtn.authory_service.domain.exception.NotFoundException;
 
 public class UserNotFoundException extends NotFoundException {
     public UserNotFoundException(String errorCode, String message) {

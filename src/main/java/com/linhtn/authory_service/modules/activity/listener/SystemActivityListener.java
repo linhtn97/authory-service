@@ -3,10 +3,11 @@ package com.linhtn.authory_service.modules.activity.listener;
 import java.time.LocalDateTime;
 
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import com.linhtn.authory_service.modules.activity.domain.entity.SystemActivity;
-import com.linhtn.authory_service.modules.activity.repository.SystemActivityRepository;
+import com.linhtn.authory_service.modules.activity.domain.model.SystemActivity;
+import com.linhtn.authory_service.modules.activity.domain.repository.SystemActivityRepository;
 import com.linhtn.authory_service.modules.rbac.domain.event.GroupCreateEvent;
 import com.linhtn.authory_service.modules.rbac.domain.event.GroupDeleteEvent;
 import com.linhtn.authory_service.modules.rbac.domain.event.GroupUpdateEvent;
@@ -31,6 +32,7 @@ public class SystemActivityListener {
     private final SystemActivityRepository systemActivityRepository;
 
     // --- User events ---
+    @Async
     @EventListener
     public void handleUserCreate(UserCreateEvent event) {
         var user = event.getUser();
@@ -41,6 +43,7 @@ public class SystemActivityListener {
                 user.getUpdatedAt());
     }
 
+    @Async
     @EventListener
     public void handleUserUpdate(UserUpdateEvent event) {
         var user = event.getUser();
@@ -51,6 +54,7 @@ public class SystemActivityListener {
                 user.getUpdatedAt());
     }
 
+    @Async
     @EventListener
     public void handleUserDelete(UserDeleteEvent event) {
         var user = event.getUser();
@@ -62,6 +66,7 @@ public class SystemActivityListener {
     }
 
     // --- Role events ---
+    @Async
     @EventListener
     public void handleRoleCreate(RoleCreateEvent event) {
         var role = event.getRole();
@@ -72,6 +77,7 @@ public class SystemActivityListener {
                 role.getUpdatedAt());
     }
 
+    @Async
     @EventListener
     public void handleRoleUpdate(RoleUpdateEvent event) {
         var role = event.getRole();
@@ -82,6 +88,7 @@ public class SystemActivityListener {
                 role.getUpdatedAt());
     }
 
+    @Async
     @EventListener
     public void handleRoleDelete(RoleDeleteEvent event) {
         var role = event.getRole();
@@ -93,6 +100,7 @@ public class SystemActivityListener {
     }
 
     // --- Group events ---
+    @Async
     @EventListener
     public void handleGroupCreate(GroupCreateEvent event) {
         var group = event.getGroup();
@@ -103,6 +111,7 @@ public class SystemActivityListener {
                 group.getUpdatedAt());
     }
 
+    @Async
     @EventListener
     public void handleGroupUpdate(GroupUpdateEvent event) {
         var group = event.getGroup();
@@ -113,6 +122,7 @@ public class SystemActivityListener {
                 group.getUpdatedAt());
     }
 
+    @Async
     @EventListener
     public void handleGroupDelete(GroupDeleteEvent event) {
         var group = event.getGroup();
@@ -124,6 +134,7 @@ public class SystemActivityListener {
     }
 
     // --- Permission events ---
+    @Async
     @EventListener
     public void handlePermissionCreate(PermissionCreateEvent event) {
         var permission = event.getPermission();
@@ -134,6 +145,7 @@ public class SystemActivityListener {
                 permission.getUpdatedAt());
     }
 
+    @Async
     @EventListener
     public void handlePermissionUpdate(PermissionUpdateEvent event) {
         var permission = event.getPermission();
@@ -144,6 +156,7 @@ public class SystemActivityListener {
                 permission.getUpdatedAt());
     }
 
+    @Async
     @EventListener
     public void handlePermissionDelete(PermissionDeleteEvent event) {
         var permission = event.getPermission();
@@ -157,11 +170,13 @@ public class SystemActivityListener {
     private void saveActivity(
             String text, String iconType, LocalDateTime createdAt, LocalDateTime updatedAt) {
         try {
-            SystemActivity activity = new SystemActivity();
-            activity.setText(text);
-            activity.setIconType(iconType);
-            activity.setCreatedAt(createdAt);
-            activity.setUpdatedAt(updatedAt);
+            SystemActivity activity =
+                    SystemActivity.builder()
+                            .text(text)
+                            .iconType(iconType)
+                            .createdAt(createdAt)
+                            .updatedAt(updatedAt)
+                            .build();
             systemActivityRepository.save(activity);
         } catch (Exception e) {
             log.error("Failed to save system activity: {}", e.getMessage(), e);

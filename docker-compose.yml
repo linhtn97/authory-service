@@ -1,0 +1,40 @@
+services:
+  # Database Service
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: authory-postgres
+  #   restart: always
+  #   environment:
+  #     POSTGRES_DB: authory
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U postgres -d authory"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 5
+
+  # Application Service
+  authory-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: authory-service
+    restart: unless-stopped
+    ports:
+      - "8600:8600"
+    environment:
+      # Override the DB URL to use the docker network service name instead of localhost
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/authory
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+    # depends_on:
+    #   postgres:
+    #     condition: service_healthy
+
+# volumes:
+#   postgres-data:

@@ -1,109 +1,110 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '4.0.0'
-	id 'io.spring.dependency-management' version '1.1.7'
-	id 'com.diffplug.spotless' version '8.4.0'
+    id 'java'
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
+    alias(libs.plugins.spotless)
 }
 
 group = 'com.linhtn'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(25)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
 }
 
 configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenLocal()
+    mavenCentral()
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-security'
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-	compileOnly 'org.projectlombok:lombok'
-	runtimeOnly 'org.postgresql:postgresql'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
-	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
-	testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
-	testImplementation 'org.springframework.boot:spring-boot-starter-webflux-test'
-	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    implementation libs.spring.boot.starter.data.jpa
+    implementation libs.spring.boot.starter.security
+    implementation libs.spring.boot.starter.validation
+    implementation libs.spring.boot.starter.webflux
+    implementation libs.spring.boot.starter.webmvc
+    implementation libs.spring.boot.starter.actuator
+    implementation libs.spring.boot.starter.cache
+    implementation libs.spring.boot.starter.data.redis
+    implementation libs.spring.aop
+    implementation libs.aspectj.weaver
 
-    //mapstruct
-    implementation 'org.mapstruct:mapstruct:1.6.3'
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
-    //jwt provider
-    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
-    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
-    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+    // Platform Shared Modules (be-platform from mavenLocal)
+    implementation libs.bundles.platform
 
-    implementation 'tools.jackson.core:jackson-databind:3.0.3'
+    // Database Migration Bundle
+    implementation libs.bundles.flyway
+
+    // Observability, Tracing & Metrics Bundle
+    implementation libs.bundles.observability
+
+    // OpenAPI 3 / Swagger UI
+    implementation libs.springdoc.openapi
+
+    // MapStruct
+    implementation libs.mapstruct
+    annotationProcessor libs.mapstruct.processor
+
+    // JWT Provider
+    implementation libs.jjwt.api
+    runtimeOnly libs.jjwt.impl
+    runtimeOnly libs.jjwt.jackson
+
+    // Jackson
+    implementation libs.jackson.databind
+
+    // Redisson
+    implementation libs.redisson
+
+    compileOnly libs.lombok
+    runtimeOnly libs.postgresql
+    annotationProcessor libs.lombok
+
+    testImplementation libs.spring.boot.starter.data.jpa.test
+    testImplementation libs.spring.boot.starter.security.test
+    testImplementation libs.spring.boot.starter.validation.test
+    testImplementation libs.spring.boot.starter.webflux.test
+    testImplementation libs.spring.boot.starter.webmvc.test
+    testRuntimeOnly libs.junit.platform.launcher
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
 }
 
 spotless {
-	java {
-		target 'src/**/*.java'
+    java {
+        target 'src/**/*.java'
 
-		// Use Google Java Format (industry standard)
-		googleJavaFormat('1.35.0')
-				.aosp() // optional: slightly different wrapping (more compact)
+        // Use Google Java Format (industry standard)
+        googleJavaFormat('1.35.0')
+                .aosp() // optional: slightly different wrapping (more compact)
 
-		// Remove unused imports
-		removeUnusedImports()
+        // Remove unused imports
+        removeUnusedImports()
 
-		// Import order (very important for large teams)
-		importOrder(
-				'java',
-				'javax',
-				'jakarta',
-				'org',
-				'com',
-				'' // static imports last
-		)
+        // Import order (very important for large teams)
+        importOrder(
+                'java',
+                'javax',
+                'jakarta',
+                'org',
+                'com',
+                '' // static imports last
+        )
 
-		// Ensure newline at end of file
-		endWithNewline()
+        // Ensure newline at end of file
+        endWithNewline()
 
-		// Trim trailing whitespace
-		trimTrailingWhitespace()
-
-		// Optional: enforce license header
-		// licenseHeader '''/*
-		// * Copyright (c) ${YEAR}
-		// * Your Company Name
-		// */'''
-	}
-
-	// Format Gradle files
-	groovyGradle {
-		target '*.gradle'
-		trimTrailingWhitespace()
-		endWithNewline()
-	}
-
-	// Format miscellaneous files
-	format 'misc', {
-		target '*.md', '.gitignore', '*.yml', '*.yaml'
-		trimTrailingWhitespace()
-		endWithNewline()
-	}
-}
-
-tasks.named('check') {
-	dependsOn 'spotlessCheck'
+        // Trim trailing whitespace
+        trimTrailingWhitespace()
+    }
 }

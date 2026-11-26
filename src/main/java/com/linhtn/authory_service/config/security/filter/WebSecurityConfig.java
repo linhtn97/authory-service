@@ -18,12 +18,11 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.RequestMatcher;
 
-import com.linhtn.authory_service.config.i18n.I18nHelper;
 import com.linhtn.authory_service.config.security.config.SecurityProperties;
 import com.linhtn.authory_service.config.security.exception.error.AuthError;
-import com.linhtn.shared_kernel.representation.api.ApiErrorResponse;
+import com.linhtn.sharedkernel.representation.ApiErrorResponse;
+import com.linhtn.web.i18n.MessageResolver;
 
 import tools.jackson.databind.ObjectMapper;
 
@@ -33,17 +32,23 @@ import tools.jackson.databind.ObjectMapper;
 public class WebSecurityConfig {
     private final SecurityProperties securityProperties;
     private final JwtAuthorizationFilter authorizationFilter;
-    private final I18nHelper i18nHelper;
+    private final CorrelationIdFilter correlationIdFilter;
+    private final RateLimitingFilter rateLimitingFilter;
+    private final MessageResolver messageResolver;
     private final ObjectMapper objectMapper;
 
     public WebSecurityConfig(
             SecurityProperties securityProperties,
             @Lazy JwtAuthorizationFilter authorizationFilter,
-            I18nHelper i18nHelper,
+            CorrelationIdFilter correlationIdFilter,
+            RateLimitingFilter rateLimitingFilter,
+            MessageResolver messageResolver,
             ObjectMapper objectMapper) {
         this.securityProperties = securityProperties;
         this.authorizationFilter = authorizationFilter;
-        this.i18nHelper = i18nHelper;
+        this.correlationIdFilter = correlationIdFilter;
+        this.rateLimitingFilter = rateLimitingFilter;
+        this.messageResolver = messageResolver;
         this.objectMapper = objectMapper;
     }
 
@@ -65,12 +70,12 @@ public class WebSecurityConfig {
                                                         .getSwaggerRoutes()
                                                         .toArray(new String[0]))
                                         .permitAll()
-                                        .requestMatchers(isInternalRequest())
-                                        .permitAll() // <- add this
                                         .anyRequest()
                                         .authenticated())
                 .sessionManagement(
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(authorizationFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(
                         exceptionHandling ->
@@ -117,7 +122,7 @@ public class WebSecurityConfig {
             throws IOException {
         ApiErrorResponse apiError = new ApiErrorResponse();
         apiError.setErrorCode(error);
-        apiError.setErrorMessage(i18nHelper.getMessage(message));
+        apiError.setErrorMessage(messageResolver.getMessage(message));
         apiError.setTimestamp(LocalDateTime.now());
         apiError.setErrorDetails(metadata);
         apiError.setPath(path);
@@ -127,17 +132,5 @@ public class WebSecurityConfig {
 
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(objectMapper.writeValueAsString(apiError));
-    }
-
-    private RequestMatcher isInternalRequest() {
-        return request -> {
-            String internal = request.getHeader("X-Internal-Call");
-
-            if ("true".equalsIgnoreCase(internal)) {
-                return true; // Internal request by domain
-            }
-
-            return false; // Require authentication for external calls
-        };
     }
 }

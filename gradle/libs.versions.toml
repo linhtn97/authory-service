@@ -1,0 +1,94 @@
+[versions]
+springBoot = "4.0.0"
+springDependencyManagement = "1.1.7"
+spotless = "8.4.0"
+springdoc = "2.8.5"
+platform = "0.0.1-SNAPSHOT"
+mapstruct = "1.6.3"
+jjwt = "0.12.6"
+jackson = "3.0.3"
+redisson = "3.44.0"
+
+[libraries]
+# Spring Boot Starters
+spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
+spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
+spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-boot-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux" }
+spring-boot-starter-webmvc = { module = "org.springframework.boot:spring-boot-starter-webmvc" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-cache = { module = "org.springframework.boot:spring-boot-starter-cache" }
+spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boot-starter-data-redis" }
+spring-aop = { module = "org.springframework:spring-aop" }
+aspectj-weaver = { module = "org.aspectj:aspectjweaver" }
+
+# Testing Starters
+spring-boot-starter-data-jpa-test = { module = "org.springframework.boot:spring-boot-starter-data-jpa-test" }
+spring-boot-starter-security-test = { module = "org.springframework.boot:spring-boot-starter-security-test" }
+spring-boot-starter-validation-test = { module = "org.springframework.boot:spring-boot-starter-validation-test" }
+spring-boot-starter-webflux-test = { module = "org.springframework.boot:spring-boot-starter-webflux-test" }
+spring-boot-starter-webmvc-test = { module = "org.springframework.boot:spring-boot-starter-webmvc-test" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
+# Database & Migrations
+flyway-core = { module = "org.flywaydb:flyway-core" }
+flyway-postgres = { module = "org.flywaydb:flyway-database-postgresql" }
+postgresql = { module = "org.postgresql:postgresql" }
+
+# OpenAPI & Documentation
+springdoc-openapi = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+
+# Platform Shared Modules (be-platform)
+platform-shared-kernel = { module = "com.linhtn:shared-kernel", version.ref = "platform" }
+platform-web-core = { module = "com.linhtn:web-core", version.ref = "platform" }
+platform-cache-core = { module = "com.linhtn:cache-core", version.ref = "platform" }
+platform-cache-redis = { module = "com.linhtn:cache-redis", version.ref = "platform" }
+platform-data-core = { module = "com.linhtn:data-core", version.ref = "platform" }
+platform-data-jpa = { module = "com.linhtn:data-jpa", version.ref = "platform" }
+platform-idempotency-core = { module = "com.linhtn:idempotency-core", version.ref = "platform" }
+platform-openapi-core = { module = "com.linhtn:openapi-core", version.ref = "platform" }
+platform-ratelimit-core = { module = "com.linhtn:ratelimit-core", version.ref = "platform" }
+
+# Observability, Tracing & Metrics
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
+micrometer-tracing-bridge-otel = { module = "io.micrometer:micrometer-tracing-bridge-otel" }
+opentelemetry-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp" }
+micrometer-context-propagation = { module = "io.micrometer:context-propagation" }
+
+# Utilities & Tools
+lombok = { module = "org.projectlombok:lombok" }
+mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
+mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
+jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt" }
+jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "jjwt" }
+jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt" }
+jackson-databind = { module = "tools.jackson.core:jackson-databind", version.ref = "jackson" }
+redisson = { module = "org.redisson:redisson", version.ref = "redisson" }
+
+[bundles]
+observability = [
+    "micrometer-registry-prometheus",
+    "micrometer-tracing-bridge-otel",
+    "opentelemetry-exporter-otlp",
+    "micrometer-context-propagation"
+]
+platform = [
+    "platform-shared-kernel",
+    "platform-web-core",
+    "platform-cache-core",
+    "platform-cache-redis",
+    "platform-data-core",
+    "platform-data-jpa",
+    "platform-idempotency-core",
+    "platform-openapi-core",
+    "platform-ratelimit-core"
+]
+flyway = [
+    "flyway-core",
+    "flyway-postgres"
+]
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "springDependencyManagement" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

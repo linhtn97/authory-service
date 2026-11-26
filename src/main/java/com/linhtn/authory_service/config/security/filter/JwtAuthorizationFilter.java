@@ -8,6 +8,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -21,38 +26,34 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.linhtn.authory_service.config.i18n.I18nHelper;
 import com.linhtn.authory_service.config.security.config.SecurityProperties;
 import com.linhtn.authory_service.config.security.exception.error.AuthError;
-import com.linhtn.authory_service.modules.auth.service.PartnerAuthenticationService;
-import com.linhtn.authory_service.modules.auth.service.UserAuthenticationService;
-import com.linhtn.shared_kernel.representation.api.ApiErrorResponse;
+import com.linhtn.authory_service.modules.auth.application.port.in.PartnerAuthenticationUseCase;
+import com.linhtn.authory_service.modules.auth.application.port.in.UserAuthenticationUseCase;
+import com.linhtn.sharedkernel.representation.ApiErrorResponse;
+import com.linhtn.web.i18n.MessageResolver;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import tools.jackson.databind.ObjectMapper;
 
 @Component
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(JwtAuthorizationFilter.class);
 
-    private final I18nHelper i18nHelper;
-    private final PartnerAuthenticationService partnerAuthenticationService;
-    private final UserAuthenticationService userAuthenticationService;
+    private final MessageResolver messageResolver;
+    private final PartnerAuthenticationUseCase partnerAuthenticationUseCase;
+    private final UserAuthenticationUseCase userAuthenticationUseCase;
     private final ObjectMapper objectMapper;
     private final SecurityProperties securityProperties;
 
     public JwtAuthorizationFilter(
-            I18nHelper i18nHelper,
-            PartnerAuthenticationService partnerAuthenticationService,
-            UserAuthenticationService userAuthenticationService,
+            MessageResolver messageResolver,
+            PartnerAuthenticationUseCase partnerAuthenticationUseCase,
+            UserAuthenticationUseCase userAuthenticationUseCase,
             ObjectMapper objectMapper,
             SecurityProperties securityProperties) {
-        this.i18nHelper = i18nHelper;
-        this.partnerAuthenticationService = partnerAuthenticationService;
-        this.userAuthenticationService = userAuthenticationService;
+        this.messageResolver = messageResolver;
+        this.partnerAuthenticationUseCase = partnerAuthenticationUseCase;
+        this.userAuthenticationUseCase = userAuthenticationUseCase;
         this.objectMapper = objectMapper;
         this.securityProperties = securityProperties;
     }
@@ -76,7 +77,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                     final String clientKey = request.getHeader("Client-Key");
                     final String traceId = request.getHeader("Trace-Id");
 
-                    var principal = partnerAuthenticationService.getPrincipal(clientId, clientKey);
+                    var principal = partnerAuthenticationUseCase.getPrincipal(clientId, clientKey);
 
                     if (principal == null) {
                         setErrorResponse(null, request.getRequestURI(), response);
@@ -131,7 +132,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
             try {
                 final String currentToken = extractTokenFromHeader(authHeader);
-                var principal = userAuthenticationService.getPrincipal(currentToken);
+                var principal = userAuthenticationUseCase.getPrincipal(currentToken);
                 if (shouldAuthenticate(principal.username())) {
                     // this way also can check token revoked and make sure this is access token not
                     // refresh token
@@ -168,7 +169,9 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
             filterChain.doFilter(request, response);
         } finally {
-            MDC.clear();
+            MDC.remove("traceId");
+            MDC.remove("partnerId");
+            MDC.remove("userId");
             SecurityContextHolder.clearContext();
         }
     }
@@ -192,7 +195,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             throws IOException {
         ApiErrorResponse apiError = new ApiErrorResponse();
         apiError.setErrorCode(HttpStatus.UNAUTHORIZED.name());
-        apiError.setErrorMessage(i18nHelper.getMessage(AuthError.UNAUTHORIZED.getMessage()));
+        apiError.setErrorMessage(messageResolver.getMessage(AuthError.UNAUTHORIZED.getMessage()));
         apiError.setTimestamp(LocalDateTime.now());
         apiError.setErrorDetails(metadata);
         apiError.setPath(path);

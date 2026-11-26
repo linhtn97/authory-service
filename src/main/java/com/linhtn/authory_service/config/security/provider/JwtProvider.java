@@ -79,9 +79,20 @@ public class JwtProvider {
     }
 
     public String generateToken(Principal principal, TokenType tokenType) {
-        return buildToken(
-                principal,
-                tokenType.equals(TokenType.ACCESS) ? accessExpiration : refreshExpiration);
+        long expiration;
+        if (tokenType.equals(TokenType.MFA_PENDING)) {
+            expiration = 300000L; // 5 minutes
+        } else if (tokenType.equals(TokenType.ACCESS)) {
+            expiration = accessExpiration;
+        } else {
+            expiration = refreshExpiration;
+        }
+        return buildToken(principal, expiration);
+    }
+
+    public UUID extractUserId(String token) {
+        String uid = extractClaims(token, claims -> claims.get("uid", String.class));
+        return uid != null ? UUID.fromString(uid) : null;
     }
 
     public String extractUsername(String token) {

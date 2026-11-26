@@ -1,5 +1,6 @@
 server:
-  port: 8600
+  port: ${PORT:8600}
+  shutdown: graceful
 
 spring:
   threads:
@@ -7,48 +8,114 @@ spring:
       enabled: true
   application:
     name: authory-service
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
   datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/authory}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     hikari:
       maxLifetime: 1800000
       connectionTimeout: 30000
       minimumIdle: 5
       idleTimeout: 600000
       maximumPoolSize: 20
-    driver-class-name: org.postgresql.Driver
-    password: postgres
-    username: postgres
-    url: jdbc:postgresql://localhost:5432/authory
+      leakDetectionThreshold: 5000
+      pool-name: AuthoryHikariPool
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           lob:
             non_contextual_creation: true
-  #    show-sql: true
-  #  session:
-  #    jdbc:
-  #      initialize-schema: always
-  sql:
-    init:
-      encoding: UTF-8
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    schemas: public, auth, partner, organization, rbac, abac
+    locations: classpath:db/migration
+  cache:
+    type: simple
+    cache-names:
+      - user-authorities
+      - partner-authorities
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+platform:
+  web:
+    i18n:
+      default-locale: en
+      supported-locales:
+        - en
+        - vi
+      base-names:
+        - classpath:i18n/error_messages
+        - classpath:i18n/validation_messages
+        - classpath:i18n/messages
+        - classpath:messages
+  openapi:
+    enabled: true
+    title: Authory Service API
+    description: Enterprise Authorization & Identity Management Microservice - RBAC, ABAC, Multi-tenancy, and JWT Authentication.
+    version: v1.0.0
+    contact:
+      name: Authory Service Team
+      email: support@linhtn.com
+    servers:
+      - url: /
+        description: Default Server Root
+    security:
+      jwt-enabled: true
+      api-key-enabled: false
+    standard-responses-enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    try-it-out-enabled: true
 
 authory-server-impl:
   whitelist-routes:
     - /api/v1/public/**
     - /api/v1/auth/login
     - /api/v1/auth/register
+    - /api/v1/auth/mfa/verify
+    - /api/v1/auth/forgot-password
+    - /api/v1/auth/reset-password
     - /api/v1/auth/refresh-token
     - /api/v1/auth/principal
     - /api/v1/auth/principal/partner
+    - /actuator/**
+    - /v3/api-docs/**
+    - /swagger-ui/**
+    - /swagger-ui.html
   swagger-routes:
     - /swagger-ui.html
     - /swagger-ui/**
     - /v3/api-docs/**
   jwt:
-    secret-key: q8N2f2j+V2xYcD1N8b9J7E3lH1x+YkL4Bf7Zq2VxG+Q=
-    access-expiration: 3600000        # 1h (ms)
-    refresh-expiration: 604800000     # 7 days (ms)
+    secret-key: ${JWT_SECRET_KEY:q8N2f2j+V2xYcD1N8b9J7E3lH1x+YkL4Bf7Zq2VxG+Q=}
+    access-expiration: ${JWT_ACCESS_EXPIRATION:3600000}        # 1h (ms)
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}   # 7 days (ms)

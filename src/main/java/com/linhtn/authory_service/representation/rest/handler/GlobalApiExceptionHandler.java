@@ -17,19 +17,19 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.WebRequest;
 
-import com.linhtn.authory_service.config.i18n.I18nHelper;
-import com.linhtn.shared_kernel.application.exception.ApplicationException;
-import com.linhtn.shared_kernel.domain.exception.DomainException;
-import com.linhtn.shared_kernel.representation.api.ApiErrorResponse;
+import com.linhtn.sharedkernel.application.exception.ApplicationException;
+import com.linhtn.sharedkernel.domain.exception.DomainException;
+import com.linhtn.sharedkernel.representation.ApiErrorResponse;
+import com.linhtn.web.i18n.MessageResolver;
 
 @ControllerAdvice
 public class GlobalApiExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalApiExceptionHandler.class);
 
-    private final I18nHelper i18nHelper;
+    private final MessageResolver messageResolver;
 
-    public GlobalApiExceptionHandler(I18nHelper i18nHelper) {
-        this.i18nHelper = i18nHelper;
+    public GlobalApiExceptionHandler(MessageResolver messageResolver) {
+        this.messageResolver = messageResolver;
     }
 
     // Handle Custom DomainException
@@ -45,7 +45,7 @@ public class GlobalApiExceptionHandler {
 
         ApiErrorResponse response = new ApiErrorResponse();
         response.setErrorCode(ex.getErrorCode());
-        response.setErrorMessage(i18nHelper.getMessage(ex.getErrorMessage()));
+        response.setErrorMessage(messageResolver.getMessage(ex.getErrorMessage()));
         response.setTimestamp(LocalDateTime.now());
         response.setPath(request.getDescription(false).replace("uri=", ""));
 
@@ -65,7 +65,7 @@ public class GlobalApiExceptionHandler {
 
         ApiErrorResponse response = new ApiErrorResponse();
         response.setErrorCode(ex.getErrorCode());
-        response.setErrorMessage(i18nHelper.getMessage(ex.getErrorMessage()));
+        response.setErrorMessage(messageResolver.getMessage(ex.getErrorMessage()));
 
         response.setTimestamp(LocalDateTime.now());
         response.setPath(request.getDescription(false).replace("uri=", ""));
@@ -82,7 +82,7 @@ public class GlobalApiExceptionHandler {
         Map<String, String> fieldErrors = new LinkedHashMap<>();
 
         for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
-            String translatedMessage = i18nHelper.getMessage(fieldError.getDefaultMessage());
+            String translatedMessage = messageResolver.getMessage(fieldError.getDefaultMessage());
 
             fieldErrors.merge(
                     fieldError.getField(),
@@ -95,7 +95,7 @@ public class GlobalApiExceptionHandler {
 
         ApiErrorResponse response = new ApiErrorResponse();
         response.setErrorCode("METHOD_ARGUMENT_NOT_VALID");
-        response.setErrorMessage(i18nHelper.getMessage("error.validation.validation_failed"));
+        response.setErrorMessage(messageResolver.getMessage("error.validation.validation_failed"));
         response.setErrorDetails(fieldErrors);
         response.setTimestamp(LocalDateTime.now());
         response.setPath(path);
@@ -111,7 +111,7 @@ public class GlobalApiExceptionHandler {
         Map<String, String> missingVariables =
                 Map.of(
                         ex.getVariableName(),
-                        i18nHelper.getMessage(
+                        messageResolver.getMessage(
                                 "error.validation.missing.path_variable", ex.getVariableName()));
 
         logger.error(
@@ -122,7 +122,8 @@ public class GlobalApiExceptionHandler {
 
         ApiErrorResponse response = new ApiErrorResponse();
         response.setErrorCode("MISSING_PATH_VARIABLE");
-        response.setErrorMessage(i18nHelper.getMessage("error.validation.missing.path_variables"));
+        response.setErrorMessage(
+                messageResolver.getMessage("error.validation.missing.path_variables"));
         response.setErrorDetails(missingVariables);
         response.setTimestamp(LocalDateTime.now());
         response.setPath(request.getDescription(false).replace("uri=", ""));
@@ -143,11 +144,54 @@ public class GlobalApiExceptionHandler {
 
         ApiErrorResponse response = new ApiErrorResponse();
         response.setErrorCode(HttpStatus.UNAUTHORIZED.name());
-        response.setErrorMessage(i18nHelper.getMessage("error.auth.unauthorized"));
+        response.setErrorMessage(messageResolver.getMessage("error.auth.unauthorized"));
         response.setTimestamp(LocalDateTime.now());
         response.setPath(request.getDescription(false).replace("uri=", ""));
 
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
+    // Handle Optimistic Locking & Concurrency Failures
+    @ExceptionHandler({
+        org.springframework.dao.ConcurrencyFailureException.class,
+        jakarta.persistence.OptimisticLockException.class
+    })
+    public ResponseEntity<ApiErrorResponse> handleOptimisticLockingFailure(
+            Exception ex, WebRequest request) {
+
+        String path = request.getDescription(false).replace("uri=", "");
+        logger.warn(
+                "OptimisticLockException: Concurrent update detected on path: {}. Message: {}",
+                path,
+                ex.getMessage());
+
+        ApiErrorResponse response = new ApiErrorResponse();
+        response.setErrorCode("CONCURRENT_UPDATE_CONFLICT");
+        response.setErrorMessage(messageResolver.getMessage("error.concurrency.optimistic_lock"));
+        response.setTimestamp(LocalDateTime.now());
+        response.setPath(path);
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    // Handle Race Condition Database Unique Constraint Violations
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleDataIntegrityViolation(
+            org.springframework.dao.DataIntegrityViolationException ex, WebRequest request) {
+
+        String path = request.getDescription(false).replace("uri=", "");
+        logger.warn(
+                "DataIntegrityViolationException: Unique constraint race condition on path: {}. Message: {}",
+                path,
+                ex.getMessage());
+
+        ApiErrorResponse response = new ApiErrorResponse();
+        response.setErrorCode("DATA_INTEGRITY_VIOLATION");
+        response.setErrorMessage(messageResolver.getMessage("error.concurrency.data_integrity"));
+        response.setTimestamp(LocalDateTime.now());
+        response.setPath(path);
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
     // Handle Unexpected Exceptions
@@ -163,7 +207,7 @@ public class GlobalApiExceptionHandler {
 
         ApiErrorResponse response = new ApiErrorResponse();
         response.setErrorCode(HttpStatus.INTERNAL_SERVER_ERROR.name());
-        response.setErrorMessage(i18nHelper.getMessage("error.internal_server"));
+        response.setErrorMessage(messageResolver.getMessage("error.internal_server"));
         response.setTimestamp(LocalDateTime.now());
         response.setPath(request.getDescription(false).replace("uri=", ""));
 

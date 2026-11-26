@@ -1,6 +1,6 @@
 package com.linhtn.authory_service.modules.abac.exception.unchecked;
 
-import com.linhtn.shared_kernel.common.exception.unchecked.AlreadyExistsException;
+import com.linhtn.authory_service.domain.exception.AlreadyExistsException;
 
 public class AttributeAlreadyExistsException extends AlreadyExistsException {
     public AttributeAlreadyExistsException(String errorCode, String message) {

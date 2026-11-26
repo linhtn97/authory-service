@@ -4,7 +4,7 @@ import org.mapstruct.MapperConfig;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
-import com.linhtn.shared_kernel.infrastructure.jpa.entity.BaseEntity;
+import com.linhtn.authory_service.infrastructure.persistence.jpa.entity.BaseEntity;
 
 @MapperConfig
 public interface AuditMapperConfig {

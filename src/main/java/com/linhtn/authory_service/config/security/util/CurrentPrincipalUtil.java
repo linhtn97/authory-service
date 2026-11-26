@@ -1,13 +1,14 @@
 package com.linhtn.authory_service.config.security.util;
 
-import com.linhtn.authory_service.config.security.model.Principal;
-import com.linhtn.authory_service.config.security.model.PrincipalAuthorities;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.Optional;
-import java.util.UUID;
+import com.linhtn.authory_service.config.security.model.Principal;
+import com.linhtn.authory_service.config.security.model.PrincipalAuthorities;
 
 public class CurrentPrincipalUtil {
     private CurrentPrincipalUtil() {
