@@ -32,6 +32,7 @@ import com.linhtn.authory_service.modules.auth.representation.rest.dto.request.R
 import com.linhtn.authory_service.modules.auth.representation.rest.dto.response.AuthLoginResponse;
 import com.linhtn.authory_service.modules.auth.representation.rest.dto.response.MfaSetupResponse;
 import com.linhtn.authory_service.modules.auth.representation.rest.mapper.AuthRestMapper;
+import com.linhtn.idempotency_core.annotation.Idempotent;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -68,6 +69,7 @@ public class AuthenticationController {
         @ApiResponse(responseCode = "429", description = "Rate limit exceeded (60 req/min)")
     })
     @PostMapping("/register")
+    @Idempotent
     public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest request) {
         userAuthenticationUseCase.register(AuthRestMapper.toCommand(request));
         return ResponseEntity.noContent().build();
@@ -228,6 +230,20 @@ public class AuthenticationController {
         String token = bearerToken.replace("Bearer ", "");
         var result = userAuthenticationUseCase.refreshToken(token);
         return ResponseEntity.ok(AuthRestMapper.toResponse(result));
+    }
+
+    @Operation(
+            summary = "Resolve user principal by token",
+            description = "Returns the principal object including all aggregated authorities.",
+            security = @SecurityRequirement(name = "BearerAuth"))
+    @GetMapping("/principal")
+    public ResponseEntity<Principal> getPrincipal(
+            @Parameter(description = "Bearer access token", required = true)
+                    @RequestHeader(value = AUTHORIZATION)
+                    String bearerToken) {
+        String token = bearerToken.replace("Bearer ", "");
+        Principal principal = userAuthenticationUseCase.getPrincipal(token);
+        return ResponseEntity.ok(principal);
     }
 
     @Operation(

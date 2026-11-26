@@ -2,6 +2,7 @@ package com.linhtn.authory_service.modules.abac.application.usecase;
 
 import java.util.UUID;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,7 @@ public class AttributeDeleteService implements AttributeDeleteUseCase {
 
     @Override
     @Transactional
+    @CacheEvict(value = "abac-attributes", key = "#id")
     public void execute(UUID id) {
         log.info("Deleting attribute with ID: {}", id);
         attributeRepository

@@ -116,32 +116,32 @@ X-Correlation-Id: e4f9812b-3b8f-49b8-a612-9c1628d052d1
 
 ### 3.1 Authentication, MFA & Session Management (`/api/v1/auth`)
 
-| Method | Endpoint | Request Body | Response Body | Description | Public / Auth |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/auth/login` | `LoginRequest` | `AuthResponse` | Authenticate user with credentials (Rate limited, Lockout enabled) | Public |
-| `POST` | `/api/v1/auth/register` | `RegisterRequest` | `Void` | Register new user account (Rate limited) | Public |
-| `POST` | `/api/v1/auth/refresh-token` | Header | `AuthResponse` | Exchange valid refresh token for a new access token | Public |
-| `GET` | `/api/v1/auth/logout` | Header | `Void` | Revoke active refresh token | Authenticated |
-| `POST` | `/api/v1/auth/mfa/setup` | - | `MfaSetupResponse` | Generate new TOTP secret & QR code URI | Authenticated |
-| `POST` | `/api/v1/auth/mfa/enable` | `MfaEnableRequest` | `Void` | Verify initial 6-digit TOTP code and enable 2FA | Authenticated |
-| `POST` | `/api/v1/auth/mfa/disable` | `MfaDisableRequest` | `Void` | Disable 2FA with password confirmation | Authenticated |
-| `POST` | `/api/v1/auth/mfa/verify` | `MfaVerifyRequest` | `AuthResponse` | Complete 2-step login with temporary `mfaToken` + TOTP code | Public |
-| `POST` | `/api/v1/auth/forgot-password` | `ForgotPasswordRequest` | `Void` | Request 15-minute password reset link/token | Public |
-| `POST` | `/api/v1/auth/reset-password` | `ResetPasswordRequest` | `Void` | Reset password using valid reset token | Public |
-| `GET` | `/api/v1/auth/sessions` | - | `List<SessionResponse>` | List all active device sessions for current user | Authenticated |
-| `DELETE` | `/api/v1/auth/sessions/{id}` | - | `Void` | Revoke a specific active session | Authenticated |
-| `POST` | `/api/v1/auth/sessions/revoke-all` | - | `Void` | Terminate all other active sessions | Authenticated |
-| `GET` | `/api/v1/auth/principal/user` | Query `userId` | `Principal` | Resolve user principal context | Authenticated |
-| `GET` | `/api/v1/auth/principal/partner` | Headers | `Principal` | Resolve partner principal context | Authenticated |
+| Method | Endpoint | Request Body | Response Body | Description | Public / Auth | Idempotent |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/api/v1/auth/login` | `LoginRequest` | `AuthLoginResponse` | Authenticate user with credentials (Rate limited, Lockout enabled) | Public | No |
+| `POST` | `/api/v1/auth/register` | `RegisterRequest` | `Void` | Register new user account (Rate limited, Idempotent) | Public | **Yes (`@Idempotent`)** |
+| `POST` | `/api/v1/auth/refresh-token` | Header | `AuthLoginResponse` | Exchange valid refresh token for a new access token | Public | No |
+| `GET` | `/api/v1/auth/logout` | Header | `Void` | Revoke active refresh token | Authenticated | No |
+| `POST` | `/api/v1/auth/mfa/setup` | - | `MfaSetupResponse` | Generate new TOTP secret & QR code URI | Authenticated | No |
+| `POST` | `/api/v1/auth/mfa/enable` | `MfaEnableRequest` | `Void` | Verify initial 6-digit TOTP code and enable 2FA | Authenticated | No |
+| `POST` | `/api/v1/auth/mfa/disable` | `MfaDisableRequest` | `Void` | Disable 2FA with password confirmation | Authenticated | No |
+| `POST` | `/api/v1/auth/mfa/verify` | `MfaVerifyRequest` | `AuthLoginResponse` | Complete 2-step login with temporary `mfaToken` + TOTP code | Public | No |
+| `POST` | `/api/v1/auth/forgot-password` | `ForgotPasswordRequest` | `Void` | Request 15-minute password reset link/token | Public | No |
+| `POST` | `/api/v1/auth/reset-password` | `ResetPasswordRequest` | `Void` | Reset password using valid reset token | Public | No |
+| `GET` | `/api/v1/auth/sessions` | - | `List<SessionGetResponse>` | List all active device sessions for current user | Authenticated | No |
+| `DELETE` | `/api/v1/auth/sessions/{id}` | - | `Void` | Revoke a specific active session | Authenticated | No |
+| `POST` | `/api/v1/auth/sessions/revoke-all` | - | `Void` | Terminate all other active sessions | Authenticated | No |
+| `GET` | `/api/v1/auth/principal/user` | Query `userId` | `Principal` | Resolve user principal context and aggregated authorities | Authenticated | No |
+| `GET` | `/api/v1/auth/principal/partner` | Headers (`Client-Id`, `Client-Key`) | `Principal` | Resolve partner principal context | Authenticated | No |
 
 ### 3.2 User Management (`/api/v1/users`)
 
 | Method | Endpoint | Request Body | Response Body | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/users` | `UserCreateRequest` | `UserResponse` | Create a new user |
-| `POST` | `/api/v1/users/get-page` | `PagingRequest` | `PagingResponse<UserResponse>` | Paginated search with dynamic criteria |
-| `GET` | `/api/v1/users/{id}` | - | `UserResponse` | Retrieve user profile by UUID |
-| `PUT` | `/api/v1/users/{id}` | `UserUpdateRequest` | `UserResponse` | Update user profile |
+| `POST` | `/api/v1/users` | `UserCreateRequest` | `UserCreateResponse` | Create a new user |
+| `POST` | `/api/v1/users/get-page` | `PagingRequest` | `PagingResponse<UserGetResponse>` | Paginated search with dynamic criteria |
+| `GET` | `/api/v1/users/{id}` | - | `UserGetResponse` | Retrieve user profile by UUID |
+| `PUT` | `/api/v1/users/{id}` | `UserUpdateRequest` | `UserUpdateResponse` | Update user profile |
 | `DELETE` | `/api/v1/users/{id}` | - | `Void` | Soft delete user |
 | `POST` | `/api/v1/users/{id}/unlock` | - | `Void` | Unlock an account locked by brute-force defense |
 
@@ -150,10 +150,15 @@ X-Correlation-Id: e4f9812b-3b8f-49b8-a612-9c1628d052d1
 | Method | Endpoint | Request Body | Response Body | Description |
 | :--- | :--- | :--- | :--- | :--- |
 | `POST` | `/api/v1/abac/evaluate` | `PolicyEvaluationRequest` | `PolicyEvaluationResponse` | Evaluate dynamic contextual ABAC policy (PDP) |
-| `POST` | `/api/v1/abac/attributes` | `AttributeCreateRequest` | `AttributeResponse` | Create attribute definition |
-| `POST` | `/api/v1/abac/attributes/get-page` | `PagingRequest` | `PagingResponse<AttributeResponse>` | Paginated query of attributes |
-| `POST` | `/api/v1/abac/user-attributes` | `UserAttributeCreateRequest` | `UserAttributeResponse` | Bind attribute value to user |
-| `POST` | `/api/v1/abac/user-attributes/get-page` | `PagingRequest` | `PagingResponse<UserAttributeResponse>` | Paginated query of user attributes |
+| `POST` | `/api/v1/abac/attributes` | `AttributeCreateRequest` | `AttributeCreateResponse` | Create attribute definition |
+| `POST` | `/api/v1/abac/attributes/get-page` | `PagingRequest` | `PagingResponse<AttributeGetResponse>` | Paginated query of attributes |
+| `GET` | `/api/v1/abac/attributes/{id}` | - | `AttributeGetResponse` | Retrieve attribute by ID (Cached in Redis) |
+| `PUT` | `/api/v1/abac/attributes/{id}` | `AttributeUpdateRequest` | `AttributeUpdateResponse` | Update attribute (Evicts Redis cache) |
+| `DELETE` | `/api/v1/abac/attributes/{id}` | - | `Void` | Delete attribute (Evicts Redis cache) |
+| `POST` | `/api/v1/abac/user-attributes` | `UserAttributeCreateRequest` | `UserAttributeCreateResponse` | Bind attribute value to user (Evicts Redis cache) |
+| `POST` | `/api/v1/abac/user-attributes/get-page` | `PagingRequest` | `PagingResponse<UserAttributeGetResponse>` | Paginated query of user attributes |
+| `GET` | `/api/v1/abac/user-attributes/{id}` | - | `UserAttributeGetResponse` | Retrieve user attribute by ID (Cached in Redis) |
+| `DELETE` | `/api/v1/abac/user-attributes/{id}` | - | `Void` | Delete user attribute binding (Evicts Redis cache) |
 
 ---
 

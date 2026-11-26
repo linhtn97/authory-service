@@ -2,6 +2,7 @@ package com.linhtn.authory_service.modules.abac.application.usecase;
 
 import java.util.UUID;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ public class UserAttributeAddService implements UserAttributeAddUseCase {
 
     @Override
     @Transactional
+    @CacheEvict(value = "user-attributes", allEntries = true)
     public void execute(UUID userId, UserAttributeCreateCommand command) {
         log.info("Adding attribute to user: {}", userId);
         UserAttribute model = UserAttributeApplicationMapper.toDomain(command);

@@ -44,6 +44,8 @@ spring:
     cache-names:
       - user-authorities
       - partner-authorities
+      - abac-attributes
+      - user-attributes
 
 management:
   endpoints:
@@ -59,18 +61,82 @@ management:
     tags:
       application: ${spring.application.name}
 
+# Enterprise Platform Configurations (be-platform)
 platform:
+  # 1. Web Core & i18n
   web:
     i18n:
+      enabled: true
       default-locale: en
       supported-locales:
         - en
         - vi
       base-names:
-        - classpath:i18n/error_messages
-        - classpath:i18n/validation_messages
         - classpath:i18n/messages
         - classpath:messages
+      cache-seconds: 3600
+      encoding: UTF-8
+      fallback-to-system-locale: false
+      use-code-as-default-message: true
+    exception-handling:
+      enabled: true
+    paging-resolver:
+      enabled: true
+      default-page: 0
+      default-page-size: 20
+      max-page-size: 100
+    security-headers:
+      enabled: true
+    logging:
+      enabled: false
+
+  # 2. Distributed Cache & Redis (cache-core & cache-redis)
+  cache:
+    enabled: true
+    key-prefix: "authory"
+    default-ttl: 15m
+    null-ttl: 1m
+    lock-wait: 5s
+    lock-lease: 0s # Activates Redisson watchdog auto-renewal
+    jitter-ratio: 0.10 # ±10% jitter to prevent cache stampedes / avalanche
+    fail-open: true # Fallback smoothly if Redis is temporarily unreachable
+    metrics-enabled: true
+    redis:
+      mode: single
+      address: ${REDIS_URL:redis://localhost:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DB:0}
+      connection-pool-size: 64
+      connection-minimum-idle-size: 16
+      connect-timeout: 5s
+      timeout: 3s
+      retry-attempts: 3
+      retry-interval: 1s
+
+  # 3. Data Core & JPA (data-core & data-jpa)
+  data:
+    jpa:
+      enabled: true
+      auditing-enabled: true
+      default-auditor: "SYSTEM"
+
+  # 4. Mutation Replay Protection (idempotency-core)
+  idempotency:
+    enabled: true
+    header-name: "Idempotency-Key"
+    ttl: 24h
+    lock-wait-time: 2s
+    lock-lease-time: 30s
+    enforce-payload-match: true
+    evict-on-failure: true
+
+  # 5. Token Bucket Rate Limiting (ratelimit-core)
+  ratelimit:
+    enabled: true
+    filter-enabled: false # Authory-service uses its custom fine-grained RateLimitingFilter
+    key-prefix: "authory:ratelimit:"
+
+  # 6. OpenAPI 3 Contracts (openapi-core)
   openapi:
     enabled: true
     title: Authory Service API
@@ -117,5 +183,5 @@ authory-server-impl:
     - /v3/api-docs/**
   jwt:
     secret-key: ${JWT_SECRET_KEY:q8N2f2j+V2xYcD1N8b9J7E3lH1x+YkL4Bf7Zq2VxG+Q=}
-    access-expiration: ${JWT_ACCESS_EXPIRATION:3600000}        # 1h (ms)
-    refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}   # 7 days (ms)
+    access-expiration: ${JWT_ACCESS_EXPIRATION:3600000} # 1h (ms)
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days (ms)

@@ -35,6 +35,7 @@ import com.linhtn.authory_service.modules.partner.representation.rest.dto.respon
 import com.linhtn.authory_service.modules.partner.representation.rest.dto.response.PartnerGetResponse;
 import com.linhtn.authory_service.modules.partner.representation.rest.dto.response.PartnerUpdateResponse;
 import com.linhtn.authory_service.modules.partner.representation.rest.mapper.PartnerRestMapper;
+import com.linhtn.idempotency_core.annotation.Idempotent;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
 import com.linhtn.sharedkernel.query.FieldOrder;
@@ -142,6 +143,7 @@ public class PartnerController {
         @ApiResponse(responseCode = "400", description = "Validation failed")
     })
     @PostMapping
+    @Idempotent
     public ResponseEntity<PartnerCreateResponse> create(
             @Valid @RequestBody PartnerCreateRequest req) {
         PartnerCreateCommand command = PartnerRestMapper.toCommand(req);

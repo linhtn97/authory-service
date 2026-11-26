@@ -165,9 +165,11 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
 
     @Override
     public Principal getPrincipal(String token) {
-        String jti = jwtProvider.extractJti(token);
-        TokenResult existToken = tokenUseCase.getByJtiAndRevokedIsFalse(jti);
-        return this.getPrincipal(existToken.getUserId());
+        if (!jwtProvider.validateToken(token)) {
+            throw new IllegalArgumentException("Invalid or expired token");
+        }
+        UUID userId = jwtProvider.extractUserId(token);
+        return this.getPrincipal(userId);
     }
 
     @Override

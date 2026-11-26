@@ -2,6 +2,7 @@ package com.linhtn.authory_service.modules.abac.application.usecase;
 
 import java.util.UUID;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,7 @@ public class AttributeUpdateService implements AttributeUpdateUseCase {
 
     @Override
     @Transactional
+    @CacheEvict(value = "abac-attributes", key = "#id")
     public AttributeUpdateResult execute(UUID id, AttributeUpdateCommand command) {
         log.info("Updating attribute with ID: {}", id);
         Attribute model =

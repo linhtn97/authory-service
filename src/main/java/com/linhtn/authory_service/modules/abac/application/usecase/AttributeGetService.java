@@ -2,6 +2,7 @@ package com.linhtn.authory_service.modules.abac.application.usecase;
 
 import java.util.UUID;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,7 @@ public class AttributeGetService implements AttributeGetUseCase {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "abac-attributes", key = "#id")
     public AttributeGetResult execute(UUID id) {
         log.info("Fetching attribute with ID: {}", id);
         Attribute model =

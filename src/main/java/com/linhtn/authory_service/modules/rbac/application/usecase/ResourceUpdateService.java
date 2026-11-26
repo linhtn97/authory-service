@@ -2,6 +2,8 @@ package com.linhtn.authory_service.modules.rbac.application.usecase;
 
 import java.util.UUID;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,11 @@ public class ResourceUpdateService implements ResourceUpdateUseCase {
 
     @Override
     @Transactional
+    @Caching(
+            evict = {
+                @CacheEvict(value = "user-authorities", allEntries = true),
+                @CacheEvict(value = "partner-authorities", allEntries = true)
+            })
     public ResourceUpdateResult execute(UUID id, ResourceUpdateCommand command) {
         log.info("Updating Resource with ID: {}", id);
         Resource existing =
