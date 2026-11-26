@@ -44,6 +44,8 @@ spring:
     cache-names:
       - user-authorities
       - partner-authorities
+      - user-principals
+      - partner-principals
       - abac-attributes
       - user-attributes
 
@@ -173,6 +175,8 @@ authory-server-impl:
     - /api/v1/auth/refresh-token
     - /api/v1/auth/principal
     - /api/v1/auth/principal/partner
+    - /api/v1/auth/jwks.json
+    - /.well-known/jwks.json
     - /actuator/**
     - /v3/api-docs/**
     - /swagger-ui/**

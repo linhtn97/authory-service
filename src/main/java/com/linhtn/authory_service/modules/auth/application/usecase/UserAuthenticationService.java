@@ -2,11 +2,14 @@ package com.linhtn.authory_service.modules.auth.application.usecase;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Date;
 import java.util.HexFormat;
 import java.util.UUID;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +24,7 @@ import com.linhtn.authory_service.modules.auth.application.dto.result.AuthLoginR
 import com.linhtn.authory_service.modules.auth.application.dto.result.MfaSetupResult;
 import com.linhtn.authory_service.modules.auth.application.dto.result.TokenResult;
 import com.linhtn.authory_service.modules.auth.application.dto.result.UserCredentialResult;
+import com.linhtn.authory_service.modules.auth.application.port.in.TokenBlacklistService;
 import com.linhtn.authory_service.modules.auth.application.port.in.TokenUseCase;
 import com.linhtn.authory_service.modules.auth.application.port.in.UserAuthenticationUseCase;
 import com.linhtn.authory_service.modules.auth.application.port.in.UserCredentialUseCase;
@@ -48,6 +52,7 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
     private final JwtProvider jwtProvider;
     private final UserAuthoryUseCase userAuthoryUseCase;
     private final PasswordResetTokenJpaRepository passwordResetTokenJpaRepository;
+    private final TokenBlacklistService tokenBlacklistService;
 
     public UserAuthenticationService(
             MessageResolver i18nHelper,
@@ -59,6 +64,30 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
             JwtProvider jwtProvider,
             UserAuthoryUseCase userAuthoryUseCase,
             PasswordResetTokenJpaRepository passwordResetTokenJpaRepository) {
+        this(
+                i18nHelper,
+                passwordEncoder,
+                userGetUseCase,
+                userCreateUseCase,
+                userCredentialUseCase,
+                tokenUseCase,
+                jwtProvider,
+                userAuthoryUseCase,
+                passwordResetTokenJpaRepository,
+                new TokenBlacklistServiceImpl(null));
+    }
+
+    public UserAuthenticationService(
+            MessageResolver i18nHelper,
+            PasswordEncoder passwordEncoder,
+            UserGetUseCase userGetUseCase,
+            UserCreateUseCase userCreateUseCase,
+            UserCredentialUseCase userCredentialUseCase,
+            TokenUseCase tokenUseCase,
+            JwtProvider jwtProvider,
+            UserAuthoryUseCase userAuthoryUseCase,
+            PasswordResetTokenJpaRepository passwordResetTokenJpaRepository,
+            TokenBlacklistService tokenBlacklistService) {
         this.i18nHelper = i18nHelper;
         this.passwordEncoder = passwordEncoder;
         this.userGetUseCase = userGetUseCase;
@@ -68,6 +97,7 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
         this.jwtProvider = jwtProvider;
         this.userAuthoryUseCase = userAuthoryUseCase;
         this.passwordResetTokenJpaRepository = passwordResetTokenJpaRepository;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
@@ -136,8 +166,24 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
     @Transactional
     public void logout(String token) {
         String jti = jwtProvider.extractJti(token);
-        TokenResult existToken = tokenUseCase.getByJtiAndRevokedIsFalse(jti);
-        tokenUseCase.revokeAllByUserId(existToken.getUserId());
+        Date expiration = jwtProvider.extractExpiration(token);
+        if (expiration != null && jti != null) {
+            long remainingMillis = expiration.getTime() - System.currentTimeMillis();
+            if (remainingMillis > 0) {
+                tokenBlacklistService.blacklistToken(jti, Duration.ofMillis(remainingMillis));
+            }
+        }
+        try {
+            TokenResult existToken = tokenUseCase.getByJtiAndRevokedIsFalse(jti);
+            if (existToken != null) {
+                tokenUseCase.revokeAllByUserId(existToken.getUserId());
+            }
+        } catch (Exception e) {
+            UUID userId = jwtProvider.extractUserId(token);
+            if (userId != null) {
+                tokenUseCase.revokeAllByUserId(userId);
+            }
+        }
     }
 
     @Override
@@ -168,11 +214,19 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
         if (!jwtProvider.validateToken(token)) {
             throw new IllegalArgumentException("Invalid or expired token");
         }
+        String jti = jwtProvider.extractJti(token);
+        if (jti != null && tokenBlacklistService.isBlacklisted(jti)) {
+            throw new IllegalArgumentException("Token has been revoked");
+        }
         UUID userId = jwtProvider.extractUserId(token);
-        return this.getPrincipal(userId);
+        String username = jwtProvider.extractUsername(token);
+        String email = jwtProvider.extractEmail(token);
+        var authorities = userAuthoryUseCase.getAuthorities(userId);
+        return new Principal(userId, username, email, null, null, authorities);
     }
 
     @Override
+    @Cacheable(value = "user-principals", key = "#userId")
     public Principal getPrincipal(UUID userId) {
         UserGetResult existUser = userGetUseCase.execute(userId);
         var authorities = userAuthoryUseCase.getAuthorities(existUser.getId());

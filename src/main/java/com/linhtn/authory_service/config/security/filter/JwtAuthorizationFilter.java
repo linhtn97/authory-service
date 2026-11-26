@@ -16,6 +16,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -28,7 +29,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.linhtn.authory_service.config.security.config.SecurityProperties;
 import com.linhtn.authory_service.config.security.exception.error.AuthError;
+import com.linhtn.authory_service.config.security.model.Principal;
+import com.linhtn.authory_service.config.security.provider.JwtProvider;
 import com.linhtn.authory_service.modules.auth.application.port.in.PartnerAuthenticationUseCase;
+import com.linhtn.authory_service.modules.auth.application.port.in.TokenBlacklistService;
 import com.linhtn.authory_service.modules.auth.application.port.in.UserAuthenticationUseCase;
 import com.linhtn.sharedkernel.representation.ApiErrorResponse;
 import com.linhtn.web.i18n.MessageResolver;
@@ -42,6 +46,8 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     private final MessageResolver messageResolver;
     private final PartnerAuthenticationUseCase partnerAuthenticationUseCase;
     private final UserAuthenticationUseCase userAuthenticationUseCase;
+    private final JwtProvider jwtProvider;
+    private final TokenBlacklistService tokenBlacklistService;
     private final ObjectMapper objectMapper;
     private final SecurityProperties securityProperties;
 
@@ -51,9 +57,30 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             UserAuthenticationUseCase userAuthenticationUseCase,
             ObjectMapper objectMapper,
             SecurityProperties securityProperties) {
+        this(
+                messageResolver,
+                partnerAuthenticationUseCase,
+                userAuthenticationUseCase,
+                null,
+                null,
+                objectMapper,
+                securityProperties);
+    }
+
+    @Autowired
+    public JwtAuthorizationFilter(
+            MessageResolver messageResolver,
+            PartnerAuthenticationUseCase partnerAuthenticationUseCase,
+            UserAuthenticationUseCase userAuthenticationUseCase,
+            @Autowired(required = false) JwtProvider jwtProvider,
+            @Autowired(required = false) TokenBlacklistService tokenBlacklistService,
+            ObjectMapper objectMapper,
+            SecurityProperties securityProperties) {
         this.messageResolver = messageResolver;
         this.partnerAuthenticationUseCase = partnerAuthenticationUseCase;
         this.userAuthenticationUseCase = userAuthenticationUseCase;
+        this.jwtProvider = jwtProvider;
+        this.tokenBlacklistService = tokenBlacklistService;
         this.objectMapper = objectMapper;
         this.securityProperties = securityProperties;
     }
@@ -85,30 +112,10 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                     }
 
                     MDC.put("traceId", traceId == null ? UUID.randomUUID().toString() : traceId);
-                    MDC.put(
-                            "partnerId",
-                            String.valueOf(principal.id())); // or authUser.getUsername()
+                    MDC.put("partnerId", String.valueOf(principal.id()));
 
                     if (shouldAuthenticate(principal.username())) {
-                        var principalAuthorities = principal.authorities();
-
-                        Collection<GrantedAuthority> authorities =
-                                Stream.of(
-                                                principalAuthorities.roles(),
-                                                principalAuthorities.groups(),
-                                                principalAuthorities.resources(),
-                                                principalAuthorities.permissions())
-                                        .flatMap(Set::stream)
-                                        .map(SimpleGrantedAuthority::new)
-                                        .distinct()
-                                        .collect(Collectors.toList());
-
-                        UsernamePasswordAuthenticationToken authToken =
-                                new UsernamePasswordAuthenticationToken(
-                                        principal, null, authorities);
-                        authToken.setDetails(
-                                new WebAuthenticationDetailsSource().buildDetails(request));
-                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                        setSecurityAuthentication(principal, request);
                     }
                 } catch (Exception e) {
                     log.error(
@@ -132,34 +139,27 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
             try {
                 final String currentToken = extractTokenFromHeader(authHeader);
+
+                if (jwtProvider != null && !jwtProvider.validateToken(currentToken)) {
+                    setErrorResponse("Invalid or expired token", request.getRequestURI(), response);
+                    return;
+                }
+
+                if (jwtProvider != null && tokenBlacklistService != null) {
+                    String jti = jwtProvider.extractJti(currentToken);
+                    if (tokenBlacklistService.isBlacklisted(jti)) {
+                        setErrorResponse(
+                                "Token has been revoked", request.getRequestURI(), response);
+                        return;
+                    }
+                }
+
                 var principal = userAuthenticationUseCase.getPrincipal(currentToken);
                 if (shouldAuthenticate(principal.username())) {
-                    // this way also can check token revoked and make sure this is access token not
-                    // refresh token
-
                     MDC.put("traceId", UUID.randomUUID().toString());
-                    MDC.put("userId", String.valueOf(principal.id())); // or authUser.getUsername()
+                    MDC.put("userId", String.valueOf(principal.id()));
 
-                    var principalAuthorities = principal.authorities();
-
-                    Collection<GrantedAuthority> authorities =
-                            Stream.of(
-                                            principalAuthorities.roles(),
-                                            principalAuthorities.groups(),
-                                            principalAuthorities.resources(),
-                                            principalAuthorities.permissions())
-                                    .flatMap(Set::stream)
-                                    .map(SimpleGrantedAuthority::new)
-                                    .distinct()
-                                    .collect(Collectors.toList());
-
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(principal, null, authorities);
-
-                    authToken.setDetails(
-                            new WebAuthenticationDetailsSource().buildDetails(request));
-
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    setSecurityAuthentication(principal, request);
                 }
             } catch (Exception e) {
                 log.error("Exception during token processing: {}", e.getMessage(), e);
@@ -174,6 +174,29 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             MDC.remove("userId");
             SecurityContextHolder.clearContext();
         }
+    }
+
+    private void setSecurityAuthentication(Principal principal, HttpServletRequest request) {
+        var principalAuthorities = principal.authorities();
+        Collection<GrantedAuthority> authorities = java.util.Collections.emptyList();
+        if (principalAuthorities != null) {
+            authorities =
+                    Stream.of(
+                                    principalAuthorities.roles(),
+                                    principalAuthorities.groups(),
+                                    principalAuthorities.resources(),
+                                    principalAuthorities.permissions())
+                            .filter(java.util.Objects::nonNull)
+                            .flatMap(Set::stream)
+                            .map(SimpleGrantedAuthority::new)
+                            .distinct()
+                            .collect(Collectors.toList());
+        }
+
+        UsernamePasswordAuthenticationToken authToken =
+                new UsernamePasswordAuthenticationToken(principal, null, authorities);
+        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(authToken);
     }
 
     private String extractTokenFromHeader(String authHeader) {
@@ -203,6 +226,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType("application/json");
 
+        response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(objectMapper.writeValueAsString(apiError));
     }
 }

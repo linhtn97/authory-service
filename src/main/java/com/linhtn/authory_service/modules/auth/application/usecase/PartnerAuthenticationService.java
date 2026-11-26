@@ -3,6 +3,8 @@ package com.linhtn.authory_service.modules.auth.application.usecase;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.linhtn.authory_service.config.security.model.Principal;
@@ -29,6 +31,7 @@ public class PartnerAuthenticationService implements PartnerAuthenticationUseCas
     }
 
     @Override
+    @Cacheable(value = "partner-principals", key = "#clientId + ':' + #hashedSecret")
     public Principal getPrincipal(String clientId, String hashedSecret) {
         var existApiCredential =
                 apiCredentialUseCase.getByClientIdAndHashedSecret(clientId, hashedSecret);
@@ -45,6 +48,7 @@ public class PartnerAuthenticationService implements PartnerAuthenticationUseCas
     }
 
     @Override
+    @CacheEvict(value = "partner-principals", allEntries = true)
     public void issueApiKey(UUID partnerId) {
         PartnerGetResult existPartner = partnerGetUseCase.execute(partnerId);
         apiCredentialUseCase.create(

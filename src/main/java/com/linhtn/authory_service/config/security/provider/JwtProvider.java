@@ -12,8 +12,8 @@ import java.util.function.Function;
 import javax.crypto.SecretKey;
 
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotEmpty;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.linhtn.authory_service.config.security.config.SecurityProperties;
@@ -28,7 +28,8 @@ import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JwtProvider {
-    @NotEmpty private String secretKey;
+    private final String secretKey;
+    private final RsaKeyManager rsaKeyManager;
 
     @Min(1)
     private long accessExpiration;
@@ -37,12 +38,32 @@ public class JwtProvider {
     private long refreshExpiration;
 
     public JwtProvider(SecurityProperties securityProperties) {
-        this.secretKey = securityProperties.getJwt().getSecretKey();
-        this.accessExpiration = securityProperties.getJwt().getAccessExpiration();
-        this.refreshExpiration = securityProperties.getJwt().getRefreshExpiration();
+        this(securityProperties, null);
+    }
+
+    @Autowired
+    public JwtProvider(
+            SecurityProperties securityProperties,
+            @Autowired(required = false) RsaKeyManager rsaKeyManager) {
+        this.secretKey =
+                securityProperties.getJwt() != null
+                        ? securityProperties.getJwt().getSecretKey()
+                        : null;
+        this.accessExpiration =
+                securityProperties.getJwt() != null
+                        ? securityProperties.getJwt().getAccessExpiration()
+                        : 3600000L;
+        this.refreshExpiration =
+                securityProperties.getJwt() != null
+                        ? securityProperties.getJwt().getRefreshExpiration()
+                        : 604800000L;
+        this.rsaKeyManager = rsaKeyManager;
     }
 
     private SecretKey getSignKey() {
+        if (secretKey == null || secretKey.isBlank()) {
+            throw new IllegalStateException("JWT secret key is not configured in authory-service");
+        }
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
@@ -64,18 +85,27 @@ public class JwtProvider {
             builder.claim("roles", principal.authorities().roles());
         }
 
-        return builder.signWith(getSignKey()).compact();
+        if (rsaKeyManager != null && rsaKeyManager.isRsaEnabled()) {
+            return builder.header()
+                    .keyId(RsaKeyManager.KEY_ID)
+                    .and()
+                    .signWith(rsaKeyManager.getPrivateKey())
+                    .compact();
+        } else {
+            return builder.signWith(getSignKey()).compact();
+        }
     }
 
     private Claims extractAllClaims(String token) {
         try {
-            return Jwts.parser()
-                    .verifyWith(getSignKey())
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-        } catch (JwtException e) {
-            // Handle various JWT exceptions (invalid, expired, etc.)
+            var parserBuilder = Jwts.parser();
+            if (rsaKeyManager != null && rsaKeyManager.isRsaEnabled()) {
+                parserBuilder.verifyWith(rsaKeyManager.getPublicKey());
+            } else {
+                parserBuilder.verifyWith(getSignKey());
+            }
+            return parserBuilder.build().parseSignedClaims(token).getPayload();
+        } catch (JwtException | IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid or expired token", e);
         }
     }
@@ -124,8 +154,12 @@ public class JwtProvider {
 
     @SuppressWarnings("unchecked")
     public Set<String> extractRoles(String token) {
-        List<String> roles = extractClaims(token, claims -> claims.get("roles", List.class));
-        return roles != null ? new HashSet<>(roles) : Collections.emptySet();
+        try {
+            List<String> roles = extractClaims(token, claims -> claims.get("roles", List.class));
+            return roles != null ? new HashSet<>(roles) : Collections.emptySet();
+        } catch (Exception e) {
+            return Collections.emptySet();
+        }
     }
 
     public boolean validateToken(String token) {
@@ -137,7 +171,13 @@ public class JwtProvider {
     }
 
     public Boolean validateToken(String token, String username) {
-        final String extractedUsername = extractUsername(token);
-        return (extractedUsername.equals(username) && !isTokenExpired(token));
+        try {
+            final String extractedUsername = extractUsername(token);
+            return (extractedUsername != null
+                    && extractedUsername.equals(username)
+                    && !isTokenExpired(token));
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

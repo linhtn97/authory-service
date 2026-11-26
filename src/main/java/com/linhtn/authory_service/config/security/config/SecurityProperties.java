@@ -21,9 +21,11 @@ public class SecurityProperties {
     @Setter
     public static class JwtConfig {
         private String secretKey;
+        private String algorithm = "HS256";
+        private String privateKey;
+        private String publicKey;
 
-        private long accessExpiration;
-
-        private long refreshExpiration;
+        private long accessExpiration = 3600000L;
+        private long refreshExpiration = 604800000L;
     }
 }
