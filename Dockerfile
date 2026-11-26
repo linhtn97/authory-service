@@ -1,38 +1,62 @@
-# Stage 1: Build the application
+# syntax=docker/dockerfile:1.4
+
+# ==============================================================================
+# Stage 1: Build the application with Gradle & Eclipse Temurin JDK 25
+# ==============================================================================
 FROM eclipse-temurin:25-jdk AS builder
 WORKDIR /app
 
-# Copy gradle wrapper and related files first to cache dependencies
+# Copy gradle wrapper and build metadata first to leverage Docker layer caching
 COPY gradlew .
 COPY gradle gradle
-COPY build.gradle .
-COPY settings.gradle .
+COPY build.gradle settings.gradle ./
 
-# Make the wrapper executable
+# Make wrapper script executable
 RUN chmod +x gradlew
 
-# Download dependencies (this step is cached if the above files haven't changed)
+# Download dependencies (cached unless build/gradle files change)
 RUN ./gradlew dependencies --no-daemon
 
-# Copy source code
+# Copy application source code
 COPY src src
 
-# Build the application
-RUN ./gradlew clean bootJar -x test --no-daemon
+# Build executable Spring Boot fat JAR, skipping tests (tests verified during CI)
+RUN ./gradlew bootJar -x test --no-daemon
 
-# Stage 2: Run the application
-FROM eclipse-temurin:25-jre-alpine
+# Extract Spring Boot layers for optimized Docker layer caching and faster startup
+RUN java -Djarmode=tools -jar build/libs/*.jar extract --layers --destination build/extracted
+
+# ==============================================================================
+# Stage 2: Runtime Image with Eclipse Temurin JRE 25 (Minimal footprint)
+# ==============================================================================
+FROM eclipse-temurin:25-jre
 WORKDIR /app
 
-# Create a non-root user for security
-RUN addgroup -S spring && adduser -S spring -G spring
+# Install curl for healthcheck probing
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root system user and group for security
+RUN groupadd -r spring && useradd -r -g spring spring \
+    && mkdir -p /app/logs && chown -R spring:spring /app
+
 USER spring:spring
 
-# Copy the built jar from the builder stage
-COPY --from=builder /app/build/libs/*.jar app.jar
+# Copy extracted application layers from builder stage
+COPY --from=builder --chown=spring:spring /app/build/extracted/dependencies/ ./
+COPY --from=builder --chown=spring:spring /app/build/extracted/spring-boot-loader/ ./
+COPY --from=builder --chown=spring:spring /app/build/extracted/snapshot-dependencies/ ./
+COPY --from=builder --chown=spring:spring /app/build/extracted/application/ ./
 
-# Expose the application port
+# Expose microservice HTTP port
 EXPOSE 8600
 
-# Run the application with JVM optimizations for container environments
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-XX:+UseZGC", "-jar", "app.jar"]
+# Container JVM performance flags tailored for Java 25 & Project Loom Virtual Threads
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseZGC -XX:+ZGenerational -Djava.security.egd=file:/dev/./urandom"
+
+# Health check probing Spring Boot Actuator health endpoint
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:8600/actuator/health || exit 1
+
+# Launch Spring Boot with modular layer execution
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]

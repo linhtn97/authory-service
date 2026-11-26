@@ -36,48 +36,18 @@ ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
 
 ### 2.2 Docker Compose (`docker-compose.yml`)
 
-To run the complete stack locally including PostgreSQL:
+To run the complete production-grade microservice infrastructure stack locally (PostgreSQL 16, Redis 7.4, Jaeger Tracing, and Authory Service):
 
-```yaml
-version: '3.8'
-
-services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: authory-postgres
-    environment:
-      POSTGRES_DB: authory
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgrespassword
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d authory"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  authory-service:
-    build: .
-    container_name: authory-service
-    ports:
-      - "8600:8600"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/authory
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgrespassword
-      SERVER_PORT: 8600
-      JWT_SECRET_KEY: q8N2f2j+V2xYcD1N8b9J7E3lH1x+YkL4Bf7Zq2VxG+Q=
-      SPRING_THREADS_VIRTUAL_ENABLED: "true"
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-volumes:
-  postgres_data:
+```bash
+docker-compose up -d
 ```
+
+Services exposed:
+- **Authory Service API:** `http://localhost:8600` (Swagger UI: `http://localhost:8600/swagger-ui.html`)
+- **PostgreSQL 16:** `localhost:5432` (`authory`)
+- **Redis 7.4:** `localhost:6379`
+- **Jaeger Distributed Tracing UI:** `http://localhost:16686`
+
 
 ---
 

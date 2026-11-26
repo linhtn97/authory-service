@@ -1,16 +1,18 @@
 # Ignore Gradle build output
 build/
 .gradle/
-!build/libs/*.jar  # allow the final jar if needed directly
+!build/libs/*.jar
 
 # Ignore logs
 *.log
+logs/
 
-# Ignore IDE/editor configs
+# Ignore IDE & editor configs
 .idea/
 *.iml
 *.sw?
-*.vscode/
+*.swo
+.vscode/
 
 # Ignore OS files
 .DS_Store
@@ -19,9 +21,16 @@ Thumbs.db
 # Ignore Git
 .git/
 .gitignore
+.gitattributes
 
-# Ignore test resources
+# Ignore test resources and agent temporary files
 src/test/
+.agents/
+replace_events.ps1
+strip_bom.ps1
+scan_controllers.js
+parse_endpoints.js
+generate_openapi.js
 
 # Docker files
 Dockerfile
