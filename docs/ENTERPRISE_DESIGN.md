@@ -4,7 +4,7 @@
 
 The **Authory Service** is a centralized Identity and Access Management (IAM), Role-Based Access Control (RBAC), and Organizational Structure authority for the enterprise ecosystem.
 
-Designed as a high-performance **Modular Monolith** using **Java 25** and **Spring Boot 4.0.0**, the service provides:
+Designed as a high-performance **Modular Monolith** using **Java 25** and **Spring Boot 4.1.2**, the service provides:
 - Scalable multi-tenant and B2B partner authorization.
 - Hybrid access control combining granular RBAC with dynamic ABAC.
 - High-concurrency I/O leveraging Java 25 Virtual Threads.

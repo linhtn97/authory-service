@@ -2,7 +2,7 @@
 
 ## 1. Architectural Overview
 
-The **Authory Service** is an enterprise-grade identity, authentication, authorization, and organizational structure authority service built on **Java 25** and **Spring Boot 4.0.0**.
+The **Authory Service** is an enterprise-grade identity, authentication, authorization, and organizational structure authority service built on **Java 25** and **Spring Boot 4.1.2**.
 
 The system is implemented as a **Modular Monolith** adhering strictly to **Hexagonal Architecture (Ports and Adapters)** and **Domain-Driven Design (DDD)** principles, matching enterprise clean architecture benchmarks.
 

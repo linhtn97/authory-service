@@ -45,7 +45,7 @@ A high-performance IAM and fine-grained authorization microservice built with **
 ## 🛠️ Tech Stack & Platform Libraries
 
 - **Runtime:** Java 25 (Project Loom Virtual Threads enabled: `spring.threads.virtual.enabled: true`)
-- **Framework:** Spring Boot 4.0.0
+- **Framework:** Spring Boot 4.1.2
 - **Security & Crypto:** Spring Security 7.x, JJWT 0.12.6, BCrypt, TOTP (RFC 6238)
 - **Enterprise Platform (`be-platform`):**
   - `shared-kernel`: Unified domain/application exceptions, pagination models (`PagingRequest`, `PagingResponse`), and API error responses (`ApiErrorResponse`).

@@ -1,13 +1,13 @@
 # Authory Service
 
 [![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://openjdk.org/projects/jdk/25/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.2-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Architecture](https://img.shields.io/badge/Architecture-Hexagonal%20%7C%20Clean%20%7C%20DDD-blue.svg)](#architecture-overview)
 [![License](https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg)](LICENSE)
 
 **Authory Service** is a centralized, high-performance Identity and Access Management (IAM), Multi-Factor Authentication (MFA/2FA), Dynamic Attribute-Based Access Control (ABAC PDP), Role-Based Access Control (RBAC), and Organizational Structure authority microservice.
 
-Built with **Spring Boot 4.0.0** and **Java 25**, it adheres strictly to **Hexagonal Architecture (Ports and Adapters)** and **Domain-Driven Design (DDD)**. All business domains are completely insulated from transport protocols, database engines, and external frameworks.
+Built with **Spring Boot 4.1.2** and **Java 25**, it adheres strictly to **Hexagonal Architecture (Ports and Adapters)** and **Domain-Driven Design (DDD)**. All business domains are completely insulated from transport protocols, database engines, and external frameworks.
 
 ---
 
@@ -65,7 +65,7 @@ src/main/java/com/linhtn/authory_service/modules/
 ## 💻 Tech Stack
 
 - **Runtime & Language:** Java 25 (OpenJDK / Temurin)
-- **Framework:** Spring Boot 4.0.0
+- **Framework:** Spring Boot 4.1.2
 - **Database Migrations:** Flyway 11 / 12
 - **Data Access:** Spring Data JPA with Hibernate, PostgreSQL
 - **Security:** Spring Security, JJWT (JSON Web Token), BCrypt, Native TOTP (RFC 6238)
