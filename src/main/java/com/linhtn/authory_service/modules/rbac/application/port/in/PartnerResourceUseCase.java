@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import com.linhtn.authory_service.domain.common.MappingManager;
 import com.linhtn.authory_service.modules.rbac.application.dto.result.ResourceGetResult;
+import com.linhtn.data_core.service.MappingManager;
 
 public interface PartnerResourceUseCase extends MappingManager<UUID, UUID> {
     Set<String> getResourceCodes(UUID partnerId);
