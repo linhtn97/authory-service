@@ -48,6 +48,7 @@ platform-data-jpa = { module = "com.linhtn:data-jpa", version.ref = "platform" }
 platform-idempotency-core = { module = "com.linhtn:idempotency-core", version.ref = "platform" }
 platform-openapi-core = { module = "com.linhtn:openapi-core", version.ref = "platform" }
 platform-ratelimit-core = { module = "com.linhtn:ratelimit-core", version.ref = "platform" }
+platform-ratelimit-redis = { module = "com.linhtn:ratelimit-redis", version.ref = "platform" }
 
 # Observability, Tracing & Metrics
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
@@ -81,7 +82,8 @@ platform = [
     "platform-data-jpa",
     "platform-idempotency-core",
     "platform-openapi-core",
-    "platform-ratelimit-core"
+    "platform-ratelimit-core",
+    "platform-ratelimit-redis"
 ]
 flyway = [
     "flyway-core",

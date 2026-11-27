@@ -106,7 +106,7 @@ All services follow **Hexagonal Architecture (Ports and Adapters)** combined wit
 | **Application Output** | `application/dto/result/` | `*Result` | `OrderGetResult` |
 | **REST Controller** | `representation/rest/controller/` | `*Controller` | `OrderController`, `FileController` |
 | **HTTP Request** | `representation/rest/dto/request/` | `*Request` | `CreateOrderRequest` |
-| **HTTP Response** | `representation/rest/dto/response/` | `*Response` | `OrderResponse` |
+| **HTTP Response** | `representation/rest/dto/response/` | `*Response` | `CreateOrderResponse` |
 | **JPA Entity** | `infrastructure/persistence/jpa/entity/` | `*Entity` | `OrderEntity`, `FileMetadataEntity` |
 | **Spring Data Repo** | `infrastructure/persistence/jpa/repository/` | `*JpaRepository` | `OrderJpaRepository` |
 | **Persistence Adapter**| `infrastructure/persistence/` | `*RepositoryAdapter`| `OrderRepositoryAdapter` |

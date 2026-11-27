@@ -25,7 +25,7 @@ A high-performance IAM and fine-grained authorization microservice built with **
 - **Attribute-Based Access Control (ABAC):** Dynamic Policy Decision Point (PDP) engine evaluating subject, resource, action, and contextual environment attributes.
 - **B2B Multi-Tenant Partner Governance:** Dedicated partner tenant isolation, hashed API keys (`Client-Id`, `Client-Key`), and isolated partner authority scopes.
 - **Organizational Structure:** Enterprise multi-level hierarchy (Company, Branch, Center, Division, Department, Position).
-- **Extreme Concurrency:** Fully tuned for **Project Loom (Virtual Threads)** on Java 25 with lock-free token bucket rate limiting.
+- **Extreme Concurrency:** Fully tuned for **Project Loom (Virtual Threads)** on Java 25 with distributed Redis sliding-window rate limiting (`ratelimit-core`, `ratelimit-redis`).
 - **Enterprise Platform Foundation:** Standardized on `be-platform` shared modules for uniform pagination (`PagingRequest`, `PagingResponse`), error responses (`ApiErrorResponse`), i18n (`MessageResolver`), auditable entities, and auto-configured OpenAPI 3 contracts.
 
 ---
@@ -54,6 +54,7 @@ A high-performance IAM and fine-grained authorization microservice built with **
   - `cache-core` & `cache-redis`: Distributed cache abstractions and Redisson coordination.
   - `openapi-core`: Auto-configured OpenAPI 3 / Swagger documentation and error response schemas.
   - `idempotency-core`: Mutation replay protection via `Idempotency-Key` header.
+  - `ratelimit-core` & `ratelimit-redis`: Distributed sliding-window rate limiting via Redisson (`RateLimitFilter`, `@RateLimited`).
 - **Database:** PostgreSQL 16 (Schema migrations via Flyway, schemas: `public`, `auth`, `partner`, `organization`, `rbac`, `abac`)
 - **Code Standards:** Spotless (Google Java Format AOSP)
 

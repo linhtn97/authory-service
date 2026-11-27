@@ -46,7 +46,7 @@ Authory Service is designed as a **Modular Monolith** using **Hexagonal Architec
   - `application/port/in/`: Use case interfaces (e.g. `UserCreateUseCase`, `UserGetUseCase`).
   - `application/usecase/`: Services implementing inbound ports (e.g. `UserCreateService`).
   - `application/dto/command/`: Action commands from callers (e.g. `UserCreateCommand`).
-  - `application/dto/result/`: Results returned from use cases (e.g. `UserResult`).
+  - `application/dto/result/`: Results returned from use cases (e.g. `UserCreateResult`).
   - `application/mapper/`: Maps between Application DTOs and Domain Models.
 
 ### 2.3 Representation Layer (`modules/<feature>/representation/`)
@@ -58,7 +58,7 @@ Authory Service is designed as a **Modular Monolith** using **Hexagonal Architec
 - **Typical Components:**
   - `representation/rest/controller/`: REST API Controllers (e.g. `UserController`).
   - `representation/rest/dto/request/`: HTTP JSON request bodies (e.g. `UserCreateRequest`).
-  - `representation/rest/dto/response/`: HTTP JSON response payloads (e.g. `UserResponse`).
+  - `representation/rest/dto/response/`: HTTP JSON response payloads (e.g. `UserCreateResponse`).
   - `representation/rest/mapper/`: Maps REST DTOs to Application Commands and Results to Responses.
 
 ### 2.4 Infrastructure Layer (`modules/<feature>/infrastructure/`)

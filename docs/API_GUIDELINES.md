@@ -16,7 +16,7 @@ Conforms to RFC 9110 (HTTP Semantics), RFC 7517 (JWKS), RFC 6238 (TOTP MFA), and
 - **Authentication Scheme:** Bearer Token via HTTP `Authorization` header (`Authorization: Bearer <accessToken>`)
 - **Partner B2B Authentication:** `Client-Id` and `Client-Key` headers
 - **Distributed Tracing Header:** `X-Correlation-Id` (UUID propagated across request/response and SLF4J MDC)
-- **Rate Limiting:** Sliding-window token bucket (60 requests/minute per client IP) on sensitive authentication endpoints (`/api/v1/auth/login`, `/api/v1/auth/register`, `/api/v1/auth/mfa/verify`, `/api/v1/auth/forgot-password`, `/api/v1/auth/reset-password`). Exceeding returns `HTTP 429 Too Many Requests` with a `Retry-After: 60` response header.
+- **Rate Limiting:** Distributed sliding-window rate limiting via Redis (`platform.ratelimit` / `ratelimit-redis` / Redisson) on sensitive authentication endpoints (`/api/v1/auth/login`, `/api/v1/auth/register`, `/api/v1/auth/mfa/verify`, `/api/v1/auth/forgot-password`, `/api/v1/auth/reset-password`). Returns `HTTP 429 Too Many Requests` with RFC-standard rate limit response headers (`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `Retry-After`).
 
 ---
 

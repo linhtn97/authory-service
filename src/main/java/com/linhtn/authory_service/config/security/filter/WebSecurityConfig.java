@@ -33,7 +33,6 @@ public class WebSecurityConfig {
     private final SecurityProperties securityProperties;
     private final JwtAuthorizationFilter authorizationFilter;
     private final CorrelationIdFilter correlationIdFilter;
-    private final RateLimitingFilter rateLimitingFilter;
     private final MessageResolver messageResolver;
     private final ObjectMapper objectMapper;
 
@@ -41,13 +40,11 @@ public class WebSecurityConfig {
             SecurityProperties securityProperties,
             @Lazy JwtAuthorizationFilter authorizationFilter,
             CorrelationIdFilter correlationIdFilter,
-            RateLimitingFilter rateLimitingFilter,
             MessageResolver messageResolver,
             ObjectMapper objectMapper) {
         this.securityProperties = securityProperties;
         this.authorizationFilter = authorizationFilter;
         this.correlationIdFilter = correlationIdFilter;
-        this.rateLimitingFilter = rateLimitingFilter;
         this.messageResolver = messageResolver;
         this.objectMapper = objectMapper;
     }
@@ -75,7 +72,6 @@ public class WebSecurityConfig {
                 .sessionManagement(
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(authorizationFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(
                         exceptionHandling ->

@@ -1,4 +1,4 @@
-# Spring Boot 3 & Framework Standards
+# Spring Boot 4 & Framework Standards
 
 ## 1. Dependency Injection & Bean Configuration
 
