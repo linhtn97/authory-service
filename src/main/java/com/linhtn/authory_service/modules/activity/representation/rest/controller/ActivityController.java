@@ -30,7 +30,8 @@ public class ActivityController {
 
     @Operation(
             summary = "Get recent system activities",
-            description = "Retrieves recent system activity audit logs up to the specified limit (default: 20).")
+            description =
+                    "Retrieves recent system activity audit logs up to the specified limit (default: 20).")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Recent activities returned successfully"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")

@@ -22,11 +22,13 @@ import com.linhtn.authory_service.modules.auth.application.dto.command.UserLogin
 import com.linhtn.authory_service.modules.auth.application.dto.result.MfaSetupResult;
 import com.linhtn.authory_service.modules.auth.application.port.in.PartnerAuthenticationUseCase;
 import com.linhtn.authory_service.modules.auth.application.port.in.UserAuthenticationUseCase;
+import com.linhtn.authory_service.modules.auth.representation.rest.dto.request.ChangePasswordRequest;
 import com.linhtn.authory_service.modules.auth.representation.rest.dto.request.ForgotPasswordRequest;
 import com.linhtn.authory_service.modules.auth.representation.rest.dto.request.LoginRequest;
 import com.linhtn.authory_service.modules.auth.representation.rest.dto.request.MfaDisableRequest;
 import com.linhtn.authory_service.modules.auth.representation.rest.dto.request.MfaEnableRequest;
 import com.linhtn.authory_service.modules.auth.representation.rest.dto.request.MfaVerifyRequest;
+import com.linhtn.authory_service.modules.auth.representation.rest.dto.request.RefreshTokenRequest;
 import com.linhtn.authory_service.modules.auth.representation.rest.dto.request.RegisterRequest;
 import com.linhtn.authory_service.modules.auth.representation.rest.dto.request.ResetPasswordRequest;
 import com.linhtn.authory_service.modules.auth.representation.rest.dto.response.AuthLoginResponse;
@@ -200,10 +202,38 @@ public class AuthenticationController {
     }
 
     @Operation(
+            summary = "Change password for authenticated user",
+            description =
+                    "Updates the caller's password after verifying their current password. All active sessions are revoked.",
+            security = @SecurityRequirement(name = "BearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Password changed successfully"),
+        @ApiResponse(
+                responseCode = "400",
+                description = "Current password invalid or validation failed"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    @PostMapping("/change-password")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        UUID currentUserId = CurrentPrincipalUtil.getId();
+        userAuthenticationUseCase.changePassword(
+                currentUserId, request.getCurrentPassword(), request.getNewPassword());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
             summary = "Logout user",
             description = "Revokes the active refresh token session for the caller.",
             security = @SecurityRequirement(name = "BearerAuth"))
     @ApiResponses({@ApiResponse(responseCode = "204", description = "Logged out successfully")})
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logoutPost(
+            @Parameter(description = "Bearer access token", required = true)
+                    @RequestHeader(value = AUTHORIZATION)
+                    String bearerToken) {
+        return logout(bearerToken);
+    }
+
     @GetMapping("/logout")
     public ResponseEntity<Void> logout(
             @Parameter(description = "Bearer access token", required = true)
@@ -217,11 +247,33 @@ public class AuthenticationController {
     @Operation(
             summary = "Refresh access token",
             description =
-                    "Exchanges a valid refresh token for a fresh pair of access and refresh tokens.")
+                    "Exchanges a valid refresh token for a fresh pair of access and refresh tokens. Accepts refresh token via Authorization header or JSON request body.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Tokens refreshed"),
         @ApiResponse(responseCode = "401", description = "Refresh token expired or revoked")
     })
+    @PostMapping("/refresh-token")
+    public ResponseEntity<AuthLoginResponse> refreshTokenPost(
+            @Parameter(description = "Bearer refresh token")
+                    @RequestHeader(value = AUTHORIZATION, required = false)
+                    String bearerToken,
+            @RequestBody(required = false) RefreshTokenRequest request) {
+        String token = null;
+        if (bearerToken != null && !bearerToken.isBlank()) {
+            token = bearerToken.replace("Bearer ", "");
+        } else if (request != null
+                && request.getRefreshToken() != null
+                && !request.getRefreshToken().isBlank()) {
+            token = request.getRefreshToken();
+        }
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Refresh token is required via Authorization header or request body");
+        }
+        var result = userAuthenticationUseCase.refreshToken(token);
+        return ResponseEntity.ok(AuthRestMapper.toResponse(result));
+    }
+
     @GetMapping("/refresh-token")
     public ResponseEntity<AuthLoginResponse> refreshToken(
             @Parameter(description = "Bearer refresh token", required = true)

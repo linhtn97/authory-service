@@ -377,6 +377,21 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
         tokenUseCase.revokeAllByUserId(resetToken.getUserId());
     }
 
+    @Override
+    @Transactional
+    public void changePassword(UUID userId, String currentPassword, String newPassword) {
+        UserCredentialResult credential = userCredentialUseCase.getByUserId(userId);
+        if (!passwordEncoder.matches(currentPassword, credential.getPassword())) {
+            throw new UserCredentialInvalidException(
+                    UserCredentialError.USER_CREDENTIAL_INVALID.name(),
+                    i18nHelper.getMessage(
+                            UserCredentialError.USER_CREDENTIAL_INVALID.getMessage()));
+        }
+
+        userCredentialUseCase.resetPassword(userId, passwordEncoder.encode(newPassword));
+        tokenUseCase.revokeAllByUserId(userId);
+    }
+
     private String hashToken(String rawToken) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

@@ -32,4 +32,6 @@ public interface UserAuthenticationUseCase {
     void requestPasswordReset(String email);
 
     void resetPasswordWithToken(String token, String newPassword);
+
+    void changePassword(UUID userId, String currentPassword, String newPassword);
 }
