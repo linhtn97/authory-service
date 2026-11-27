@@ -25,7 +25,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
         description = "Dynamic Policy Decision Point (PDP) evaluating SpEL rules over attributes")
 @SecurityRequirement(name = "BearerAuth")
 @RestController
-@RequestMapping("/api/v1/abac")
+@RequestMapping("/api/v1/policies")
 public class PolicyEvaluationController {
 
     private final PolicyEvaluationUseCase policyEvaluationUseCase;
