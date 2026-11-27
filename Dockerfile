@@ -6,6 +6,14 @@
 FROM eclipse-temurin:25-jdk AS builder
 WORKDIR /app
 
+# Optional build arguments for Nexus maven repository access during docker build
+ARG NEXUS_URL=http://host.docker.internal:8081/repository/maven-public/
+ARG NEXUS_USERNAME=admin
+ARG NEXUS_PASSWORD=admin123
+ENV NEXUS_URL=${NEXUS_URL} \
+    NEXUS_USERNAME=${NEXUS_USERNAME} \
+    NEXUS_PASSWORD=${NEXUS_PASSWORD}
+
 # Copy gradle wrapper and build metadata first to leverage Docker layer caching
 COPY gradlew .
 COPY gradle gradle
@@ -52,11 +60,11 @@ COPY --from=builder --chown=spring:spring /app/build/extracted/application/ ./
 EXPOSE 8600
 
 # Container JVM performance flags tailored for Java 25 & Project Loom Virtual Threads
-ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseZGC -XX:+ZGenerational -Djava.security.egd=file:/dev/./urandom"
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseZGC -Djava.security.egd=file:/dev/./urandom"
 
 # Health check probing Spring Boot Actuator health endpoint
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
   CMD curl -f http://localhost:8600/actuator/health || exit 1
 
-# Launch Spring Boot with modular layer execution
-ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]
+# Launch Spring Boot application
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/*.jar"]

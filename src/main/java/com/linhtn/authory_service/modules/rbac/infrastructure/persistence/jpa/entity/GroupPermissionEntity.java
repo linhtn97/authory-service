@@ -20,7 +20,7 @@ import lombok.Setter;
 
 @Entity
 @Table(
-        name = "group_permission",
+        name = "group_permissions",
         schema = "rbac",
         uniqueConstraints = {@UniqueConstraint(columnNames = {"group_id", "permission_id"})})
 @Getter

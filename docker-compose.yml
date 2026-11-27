@@ -66,8 +66,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        NEXUS_URL: ${NEXUS_URL:-http://host.docker.internal:8081/repository/maven-public/}
+        NEXUS_USERNAME: ${NEXUS_USERNAME:-admin}
+        NEXUS_PASSWORD: ${NEXUS_PASSWORD:-admin123}
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
     container_name: authory-service
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "${PORT:-8600}:8600"
     environment:

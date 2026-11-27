@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.HexFormat;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -77,6 +78,7 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
                 new TokenBlacklistService(null));
     }
 
+    @Autowired
     public UserAuthenticationService(
             MessageResolver i18nHelper,
             PasswordEncoder passwordEncoder,

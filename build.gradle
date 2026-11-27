@@ -23,6 +23,15 @@ configurations {
 repositories {
     mavenLocal()
     mavenCentral()
+    maven {
+        name = 'Nexus'
+        url = uri(System.getenv('NEXUS_URL') ?: (findProperty('nexusUrl') ?: 'http://localhost:8081/repository/maven-public/'))
+        allowInsecureProtocol = true
+        credentials {
+            username = System.getenv('NEXUS_USERNAME') ?: (findProperty('nexusUsername') ?: 'admin')
+            password = System.getenv('NEXUS_PASSWORD') ?: (findProperty('nexusPassword') ?: 'admin123')
+        }
+    }
 }
 
 dependencies {

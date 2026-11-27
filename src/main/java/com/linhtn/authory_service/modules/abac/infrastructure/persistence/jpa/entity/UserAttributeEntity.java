@@ -25,7 +25,7 @@ import lombok.Setter;
 @Entity
 @Table(
         name = "user_attributes",
-        schema = "auth",
+        schema = "abac",
         uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "key"})})
 public class UserAttributeEntity extends BaseEntity {
 

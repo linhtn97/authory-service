@@ -3,6 +3,8 @@ server:
   shutdown: graceful
 
 spring:
+  main:
+    allow-bean-definition-overriding: true
   threads:
     virtual:
       enabled: true
@@ -119,7 +121,7 @@ platform:
   data:
     jpa:
       enabled: true
-      auditing-enabled: true
+      auditing-enabled: false
       default-auditor: "SYSTEM"
 
   # 4. Mutation Replay Protection (idempotency-core)

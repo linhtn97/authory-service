@@ -21,7 +21,7 @@ import lombok.Setter;
 
 @Entity
 @Table(
-        name = "partner_role",
+        name = "partner_roles",
         schema = "rbac",
         uniqueConstraints = {@UniqueConstraint(columnNames = {"partner_id", "role_id"})})
 @Getter
