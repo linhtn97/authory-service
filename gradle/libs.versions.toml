@@ -49,6 +49,7 @@ platform-idempotency-core = { module = "com.linhtn:idempotency-core", version.re
 platform-openapi-core = { module = "com.linhtn:openapi-core", version.ref = "platform" }
 platform-ratelimit-core = { module = "com.linhtn:ratelimit-core", version.ref = "platform" }
 platform-ratelimit-redis = { module = "com.linhtn:ratelimit-redis", version.ref = "platform" }
+platform-tracing-core = { module = "com.linhtn:tracing-core", version.ref = "platform" }
 
 # Observability, Tracing & Metrics
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
@@ -83,7 +84,8 @@ platform = [
     "platform-idempotency-core",
     "platform-openapi-core",
     "platform-ratelimit-core",
-    "platform-ratelimit-redis"
+    "platform-ratelimit-redis",
+    "platform-tracing-core"
 ]
 flyway = [
     "flyway-core",

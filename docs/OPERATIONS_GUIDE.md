@@ -128,14 +128,14 @@ readinessProbe:
 - When a `SIGTERM` signal is received, the HTTP listener stops accepting new connections and allows in-flight requests up to 30 seconds to finish processing before terminating.
 
 ### 5.4 Correlation ID & Distributed Tracing
-- All incoming HTTP requests are intercepted by `CorrelationIdFilter`.
-- If the `X-Correlation-Id` header is missing, a random UUID is generated.
-- The ID is stored in SLF4J MDC (`correlationId`) and returned in the HTTP response header `X-Correlation-Id`.
+- All incoming HTTP requests are intercepted by `TracingFilter` from `be-platform:tracing-core`.
+- If an incoming request provides `X-Correlation-Id`, `X-Trace-ID`, or W3C `traceparent`, it is captured and bound to the thread via SLF4J MDC (`traceId`, `correlationId`).
+- If no correlation header is provided, a new UUID is generated and returned in the HTTP response headers.
 
 ---
 
 ## 6. Rate Limiting & Account Security Policies
 
-- Sensitive endpoints (`/api/v1/auth/login`, `/api/v1/auth/register`, `/api/v1/auth/mfa/verify`, `/api/v1/auth/forgot-password`, `/api/v1/auth/reset-password`) are protected by `RateLimitingFilter`.
-- Sliding-window token bucket algorithm: **60 requests per minute** per client IP. Exceeding returns `HTTP 429 Too Many Requests` with a `Retry-After: 60` header.
+- Sensitive endpoints (`/api/v1/auth/login`, `/api/v1/auth/register`, `/api/v1/auth/mfa/verify`, `/api/v1/auth/forgot-password`, `/api/v1/auth/reset-password`) are protected by `RateLimitFilter` from `be-platform:ratelimit-redis`.
+- Distributed sliding-window algorithm via Redis: **10 requests per minute** for login/register/mfa and **5 requests per minute** for password resets. Exceeding returns `HTTP 429 Too Many Requests` with standard rate limit response headers.
 - Brute-force account lockout: 5 consecutive failed login attempts locks the credential for 15 minutes. Can be unlocked via `POST /api/v1/users/{id}/unlock`.

@@ -38,7 +38,7 @@ Detailed engineering documentation is maintained in the [`docs/`](docs/) directo
 - **Optimistic Locking & Concurrency Defense:** Centralized `@Version` tracking across all entities and 27 database tables. Automatic translation of concurrent mutation conflicts to `HTTP 409 Conflict`.
 - **Automated Cache Invalidation:** Multi-level caching with `@Cacheable` and automated `@CacheEvict` when user roles, permissions, or groups mutate.
 - **Enterprise Database Migrations (Flyway):** Automated version-controlled DDL migrations across 5 schemas (`auth`, `partner`, `organization`, `rbac`, `abac`).
-- **Distributed Tracing & Rate Limiting:** `CorrelationIdFilter` (`X-Correlation-Id` MDC logging) and sliding-window rate limiting on all sensitive authentication routes.
+- **Distributed Tracing & Rate Limiting:** Platform `tracing-core` (`TracingFilter`, `X-Correlation-Id`, W3C `traceparent` MDC logging) and `ratelimit-redis` sliding-window rate limiting on all sensitive authentication routes.
 - **High Concurrency with Java 25:** Native support for Virtual Threads (`spring.threads.virtual.enabled: true`) enabling high-throughput I/O.
 - **Enterprise Observability:** Spring Boot Actuator with Prometheus metrics (`/actuator/prometheus`) and Kubernetes readiness/liveness health probes.
 

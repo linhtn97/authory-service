@@ -35,7 +35,7 @@ graph TD
     end
 
     subgraph Security_Filters ["Security & Observability Pipeline"]
-        CORR_FILTER["CorrelationIdFilter<br/>(MDC & X-Correlation-Id)"]
+        CORR_FILTER["TracingFilter<br/>(tracing-core & X-Correlation-Id)"]
         RATE_FILTER["RateLimitingFilter<br/>(Sliding Window Token Bucket)"]
         JWT_FILTER["JwtAuthorizationFilter<br/>(Stateless JWT & Authorities)"]
     end

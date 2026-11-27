@@ -174,7 +174,13 @@ platform:
         headers: true
         message: "Too many password reset attempts. Please try again after 1 minute."
 
-  # 6. OpenAPI 3 Contracts (openapi-core)
+  # 6. Distributed Tracing & W3C Context (tracing-core)
+  tracing:
+    enabled: true
+    correlation-header: "X-Correlation-Id"
+    trace-response-headers: true
+
+  # 7. OpenAPI 3 Contracts (openapi-core)
   openapi:
     enabled: true
     title: Authory Service API

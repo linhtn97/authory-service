@@ -158,8 +158,6 @@ The unit test suite consists of **30 test classes** and **69 unit test cases** e
 | `PartnerCreateServiceTest` | `PartnerCreateService` | B2B partner registration |
 | `PartnerGetServiceTest` | `PartnerGetService` | B2B partner retrieval |
 | `SystemActivityGetRecentServiceTest` | `SystemActivityGetRecentService` | Recent activity querying and mapping |
-| `CorrelationIdFilterTest` | `CorrelationIdFilter` | MDC logging propagation and header pass-through |
-| `RateLimitingFilterTest` | `RateLimitingFilter` | Sliding-window token bucket enforcement (60 req/min) and HTTP 429 rejection |
 | `JwtAuthorizationFilterTest` | `JwtAuthorizationFilter` | Stateless JWT parsing, Bearer token extraction, and SecurityContext population |
 | `TotpUtilTest` | `TotpUtil` | RFC 6238 TOTP key generation and 6-digit code verification |
 | `GlobalApiExceptionHandlerConcurrencyTest` | `GlobalApiExceptionHandler` | HTTP 409 Conflict mapping for optimistic locking and race conditions |

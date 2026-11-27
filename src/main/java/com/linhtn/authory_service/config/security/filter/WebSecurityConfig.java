@@ -32,19 +32,16 @@ import tools.jackson.databind.ObjectMapper;
 public class WebSecurityConfig {
     private final SecurityProperties securityProperties;
     private final JwtAuthorizationFilter authorizationFilter;
-    private final CorrelationIdFilter correlationIdFilter;
     private final MessageResolver messageResolver;
     private final ObjectMapper objectMapper;
 
     public WebSecurityConfig(
             SecurityProperties securityProperties,
             @Lazy JwtAuthorizationFilter authorizationFilter,
-            CorrelationIdFilter correlationIdFilter,
             MessageResolver messageResolver,
             ObjectMapper objectMapper) {
         this.securityProperties = securityProperties;
         this.authorizationFilter = authorizationFilter;
-        this.correlationIdFilter = correlationIdFilter;
         this.messageResolver = messageResolver;
         this.objectMapper = objectMapper;
     }
@@ -71,7 +68,6 @@ public class WebSecurityConfig {
                                         .authenticated())
                 .sessionManagement(
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(authorizationFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(
                         exceptionHandling ->
