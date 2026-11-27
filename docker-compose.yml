@@ -60,7 +60,86 @@ services:
       - authory-network
 
   # ============================================================================
-  # 4. Authory Service (Spring Boot 4.1.2 & Java 25)
+  # 4. Prometheus Metrics Collection
+  # ============================================================================
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: authory-prometheus
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--web.enable-lifecycle"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - authory-network
+
+  # ============================================================================
+  # 5. Grafana Loki (Centralized Log Aggregation)
+  # ============================================================================
+  loki:
+    image: grafana/loki:3.1.1
+    container_name: authory-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./docker/observability/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    networks:
+      - authory-network
+
+  # ============================================================================
+  # 6. Promtail Log Shipper (Tails App Logs & Ships to Loki)
+  # ============================================================================
+  promtail:
+    image: grafana/promtail:3.1.1
+    container_name: authory-promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./docker/observability/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - ./logs:/var/log/authory:ro
+    depends_on:
+      - loki
+    networks:
+      - authory-network
+
+  # ============================================================================
+  # 7. Grafana Dashboard (Metrics, Logs, and Distributed Tracing Visualization)
+  # ============================================================================
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: authory-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./docker/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/observability/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger
+    networks:
+      - authory-network
+
+  # ============================================================================
+  # 8. Authory Service (Spring Boot 4.1.2 & Java 25)
   # ============================================================================
   authory-service:
     build:
@@ -77,10 +156,10 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
-      - "${PORT:-8600}:8600"
+      - "${SERVER_PORT:-8600}:8600"
     environment:
       # Server & Virtual Threads Configuration
-      - PORT=8600
+      - SERVER_PORT=8600
       - SPRING_THREADS_VIRTUAL_ENABLED=true
 
       # PostgreSQL Database Connection & Flyway Schemas
@@ -101,6 +180,8 @@ services:
       # Distributed Tracing via OpenTelemetry / Jaeger
       - MANAGEMENT_OTLP_TRACING_ENDPOINT=http://jaeger:4318/v1/traces
 
+    volumes:
+      - ./logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -117,6 +198,12 @@ volumes:
     name: authory-postgres-data
   redis-data:
     name: authory-redis-data
+  prometheus-data:
+    name: authory-prometheus-data
+  loki-data:
+    name: authory-loki-data
+  grafana-data:
+    name: authory-grafana-data
 
 networks:
   authory-network:

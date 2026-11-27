@@ -76,10 +76,15 @@ public class JwtProvider {
                         .issuedAt(Date.from(now))
                         .expiration(Date.from(now.plusMillis(expiration)))
                         .claim("jti", UUID.randomUUID().toString())
-                        .claim("uid", principal.id().toString())
                         .claim("preferred_username", principal.username())
-                        .claim("username", principal.username())
                         .claim("email", principal.email());
+
+        if (principal.firstName() != null && !principal.firstName().isBlank()) {
+            builder.claim("given_name", principal.firstName());
+        }
+        if (principal.lastName() != null && !principal.lastName().isBlank()) {
+            builder.claim("family_name", principal.lastName());
+        }
 
         if (principal.authorities() != null
                 && principal.authorities().roles() != null

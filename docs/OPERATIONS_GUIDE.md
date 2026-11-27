@@ -46,7 +46,11 @@ Services exposed:
 - **Authory Service API:** `http://localhost:8600` (Swagger UI: `http://localhost:8600/swagger-ui.html`)
 - **PostgreSQL 16:** `localhost:5432` (`authory`)
 - **Redis 7.4:** `localhost:6379`
-- **Jaeger Distributed Tracing UI:** `http://localhost:16686`
+- **Jaeger Distributed Tracing UI:** `http://localhost:16686` (OTLP receivers: `4317` gRPC, `4318` HTTP)
+- **Prometheus Metrics Scraper:** `http://localhost:9090`
+- **Grafana Loki (Log Ingestion):** `http://localhost:3100`
+- **Promtail Log Agent:** `http://localhost:9080`
+- **Grafana Unified Observability Dashboard:** `http://localhost:3000` (Default login: `admin` / `admin`)
 
 
 ---

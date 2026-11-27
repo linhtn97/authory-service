@@ -1,0 +1,32 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: authory-app-logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          app: authory-service
+          job: authory-service
+          env: local
+          __path__: /var/log/authory/*.log
+    pipeline_stages:
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2}'
+          max_wait_time: 3s
+      - regex:
+          expression: '^(?P<time>\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?)\s+(?P<level>\w+)\s+\[(?P<service>[^,]*),(?P<traceId>[^,]*),(?P<spanId>[^,]*),(?P<correlationId>[^\]]*)\]\s+(?P<pid>\d+)\s+---\s+\[(?P<thread>[^\]]*)\]\s+(?P<logger>[^\s]+)\s+:\s+(?P<message>.*)$'
+      - labels:
+          level:
+          service:
+          traceId:
+          spanId:
+          correlationId:
