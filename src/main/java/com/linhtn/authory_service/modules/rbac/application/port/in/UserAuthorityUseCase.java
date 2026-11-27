@@ -4,6 +4,6 @@ import java.util.UUID;
 
 import com.linhtn.authory_service.config.security.model.PrincipalAuthorities;
 
-public interface PartnerAuthoryUseCase {
-    PrincipalAuthorities getAuthorities(UUID partnerId);
+public interface UserAuthorityUseCase {
+    PrincipalAuthorities getAuthorities(UUID userId);
 }

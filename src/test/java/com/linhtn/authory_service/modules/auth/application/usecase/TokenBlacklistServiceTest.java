@@ -23,7 +23,7 @@ class TokenBlacklistServiceTest {
         ValueOperations<String, String> valueOperations = mock(ValueOperations.class);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
 
-        TokenBlacklistServiceImpl service = new TokenBlacklistServiceImpl(redisTemplate);
+        TokenBlacklistService service = new TokenBlacklistService(redisTemplate);
         service.blacklistToken("jti-123", Duration.ofMinutes(15));
 
         verify(valueOperations)
@@ -39,7 +39,7 @@ class TokenBlacklistServiceTest {
         StringRedisTemplate redisTemplate = mock(StringRedisTemplate.class);
         when(redisTemplate.hasKey("authory:blacklist:jti:jti-123")).thenReturn(Boolean.TRUE);
 
-        TokenBlacklistServiceImpl service = new TokenBlacklistServiceImpl(redisTemplate);
+        TokenBlacklistService service = new TokenBlacklistService(redisTemplate);
 
         assertThat(service.isBlacklisted("jti-123")).isTrue();
         assertThat(service.isBlacklisted("jti-unknown")).isFalse();
@@ -48,7 +48,7 @@ class TokenBlacklistServiceTest {
     @Test
     @DisplayName("Should use local fallback when Redis is null")
     void shouldUseLocalFallbackWhenRedisNull() {
-        TokenBlacklistServiceImpl service = new TokenBlacklistServiceImpl(null);
+        TokenBlacklistService service = new TokenBlacklistService(null);
 
         assertThat(service.isBlacklisted("jti-local")).isFalse();
 

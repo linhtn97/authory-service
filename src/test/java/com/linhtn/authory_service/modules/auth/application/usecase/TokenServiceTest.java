@@ -18,7 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.linhtn.authory_service.modules.auth.application.dto.result.TokenResult;
-import com.linhtn.authory_service.modules.auth.application.mapper.TokenMapper;
+import com.linhtn.authory_service.modules.auth.application.mapper.TokenApplicationMapper;
 import com.linhtn.authory_service.modules.auth.domain.model.Token;
 import com.linhtn.authory_service.modules.auth.domain.repository.TokenRepository;
 import com.linhtn.authory_service.modules.auth.exception.unchecked.TokenNotFoundException;
@@ -29,7 +29,7 @@ class TokenServiceTest {
 
     @Mock private MessageResolver i18nHelper;
     @Mock private TokenRepository tokenRepository;
-    @Mock private TokenMapper tokenMapper;
+    @Mock private TokenApplicationMapper tokenMapper;
 
     private TokenService service;
 

@@ -280,7 +280,7 @@ Multi-tenant B2B partner registration, credential rotation, and tenant isolation
 ### 4.7 Enterprise Organization Hierarchy
 Hierarchical organizational node management supporting enterprise corporate structures:
 - **Companies:** `/api/v1/companies` (Root holding entities)
-- **Branches:** `/api/v1/branchs` (Regional branch offices)
+- **Branches:** `/api/v1/branches` (Regional branch offices)
 - **Centers:** `/api/v1/centers` (Operational centers)
 - **Divisions:** `/api/v1/divisions` (Corporate business divisions)
 - **Departments:** `/api/v1/departments` (Department units)

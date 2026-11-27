@@ -32,7 +32,7 @@ import com.linhtn.authory_service.config.security.exception.error.AuthError;
 import com.linhtn.authory_service.config.security.model.Principal;
 import com.linhtn.authory_service.config.security.provider.JwtProvider;
 import com.linhtn.authory_service.modules.auth.application.port.in.PartnerAuthenticationUseCase;
-import com.linhtn.authory_service.modules.auth.application.port.in.TokenBlacklistService;
+import com.linhtn.authory_service.modules.auth.application.port.in.TokenBlacklistUseCase;
 import com.linhtn.authory_service.modules.auth.application.port.in.UserAuthenticationUseCase;
 import com.linhtn.sharedkernel.representation.ApiErrorResponse;
 import com.linhtn.web.i18n.MessageResolver;
@@ -47,7 +47,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     private final PartnerAuthenticationUseCase partnerAuthenticationUseCase;
     private final UserAuthenticationUseCase userAuthenticationUseCase;
     private final JwtProvider jwtProvider;
-    private final TokenBlacklistService tokenBlacklistService;
+    private final TokenBlacklistUseCase tokenBlacklistUseCase;
     private final ObjectMapper objectMapper;
     private final SecurityProperties securityProperties;
 
@@ -73,14 +73,14 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             PartnerAuthenticationUseCase partnerAuthenticationUseCase,
             UserAuthenticationUseCase userAuthenticationUseCase,
             @Autowired(required = false) JwtProvider jwtProvider,
-            @Autowired(required = false) TokenBlacklistService tokenBlacklistService,
+            @Autowired(required = false) TokenBlacklistUseCase tokenBlacklistUseCase,
             ObjectMapper objectMapper,
             SecurityProperties securityProperties) {
         this.messageResolver = messageResolver;
         this.partnerAuthenticationUseCase = partnerAuthenticationUseCase;
         this.userAuthenticationUseCase = userAuthenticationUseCase;
         this.jwtProvider = jwtProvider;
-        this.tokenBlacklistService = tokenBlacklistService;
+        this.tokenBlacklistUseCase = tokenBlacklistUseCase;
         this.objectMapper = objectMapper;
         this.securityProperties = securityProperties;
     }
@@ -145,9 +145,9 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                     return;
                 }
 
-                if (jwtProvider != null && tokenBlacklistService != null) {
+                if (jwtProvider != null && tokenBlacklistUseCase != null) {
                     String jti = jwtProvider.extractJti(currentToken);
-                    if (tokenBlacklistService.isBlacklisted(jti)) {
+                    if (tokenBlacklistUseCase.isBlacklisted(jti)) {
                         setErrorResponse(
                                 "Token has been revoked", request.getRequestURI(), response);
                         return;

@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.linhtn.authory_service.modules.auth.application.dto.result.TokenResult;
-import com.linhtn.authory_service.modules.auth.application.mapper.TokenMapper;
+import com.linhtn.authory_service.modules.auth.application.mapper.TokenApplicationMapper;
 import com.linhtn.authory_service.modules.auth.application.port.in.TokenUseCase;
 import com.linhtn.authory_service.modules.auth.domain.model.Token;
 import com.linhtn.authory_service.modules.auth.domain.repository.TokenRepository;
@@ -21,10 +21,12 @@ public class TokenService implements TokenUseCase {
 
     private final MessageResolver i18nHelper;
     private final TokenRepository tokenRepository;
-    private final TokenMapper tokenMapper;
+    private final TokenApplicationMapper tokenMapper;
 
     public TokenService(
-            MessageResolver i18nHelper, TokenRepository tokenRepository, TokenMapper tokenMapper) {
+            MessageResolver i18nHelper,
+            TokenRepository tokenRepository,
+            TokenApplicationMapper tokenMapper) {
         this.i18nHelper = i18nHelper;
         this.tokenRepository = tokenRepository;
         this.tokenMapper = tokenMapper;

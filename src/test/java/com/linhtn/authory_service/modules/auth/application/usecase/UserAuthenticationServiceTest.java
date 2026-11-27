@@ -32,7 +32,7 @@ import com.linhtn.authory_service.modules.auth.application.dto.result.UserCreden
 import com.linhtn.authory_service.modules.auth.application.port.in.TokenUseCase;
 import com.linhtn.authory_service.modules.auth.application.port.in.UserCredentialUseCase;
 import com.linhtn.authory_service.modules.auth.infrastructure.persistence.jpa.repository.PasswordResetTokenJpaRepository;
-import com.linhtn.authory_service.modules.rbac.application.port.in.UserAuthoryUseCase;
+import com.linhtn.authory_service.modules.rbac.application.port.in.UserAuthorityUseCase;
 import com.linhtn.authory_service.modules.user.application.dto.command.UserCreateCommand;
 import com.linhtn.authory_service.modules.user.application.dto.result.UserCreateResult;
 import com.linhtn.authory_service.modules.user.application.dto.result.UserGetResult;
@@ -52,7 +52,7 @@ class UserAuthenticationServiceTest {
     @Mock private UserCredentialUseCase userCredentialUseCase;
     @Mock private TokenUseCase tokenUseCase;
     @Mock private JwtProvider jwtProvider;
-    @Mock private UserAuthoryUseCase userAuthoryUseCase;
+    @Mock private UserAuthorityUseCase userAuthoryUseCase;
     @Mock private PasswordResetTokenJpaRepository passwordResetTokenJpaRepository;
 
     private UserAuthenticationService service;

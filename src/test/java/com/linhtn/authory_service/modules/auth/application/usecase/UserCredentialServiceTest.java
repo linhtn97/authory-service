@@ -19,7 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.linhtn.authory_service.modules.auth.application.dto.result.UserCredentialResult;
-import com.linhtn.authory_service.modules.auth.application.mapper.UserCredentialMapper;
+import com.linhtn.authory_service.modules.auth.application.mapper.UserCredentialApplicationMapper;
 import com.linhtn.authory_service.modules.auth.domain.model.UserCredential;
 import com.linhtn.authory_service.modules.auth.domain.repository.UserCredentialRepository;
 import com.linhtn.authory_service.modules.auth.exception.unchecked.UserAccountLockedException;
@@ -31,7 +31,7 @@ class UserCredentialServiceTest {
 
     @Mock private MessageResolver i18nHelper;
     @Mock private UserCredentialRepository userCredentialRepository;
-    @Mock private UserCredentialMapper userCredentialMapper;
+    @Mock private UserCredentialApplicationMapper userCredentialMapper;
     @Mock private PasswordEncoder passwordEncoder;
 
     private UserCredentialService service;

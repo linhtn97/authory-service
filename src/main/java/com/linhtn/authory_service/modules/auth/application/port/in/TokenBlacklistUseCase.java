@@ -2,7 +2,7 @@ package com.linhtn.authory_service.modules.auth.application.port.in;
 
 import java.time.Duration;
 
-public interface TokenBlacklistService {
+public interface TokenBlacklistUseCase {
 
     void blacklistToken(String jti, Duration remainingTtl);
 

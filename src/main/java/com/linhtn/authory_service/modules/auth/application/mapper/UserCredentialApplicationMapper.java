@@ -8,7 +8,7 @@ import com.linhtn.authory_service.modules.auth.application.dto.result.UserCreden
 import com.linhtn.authory_service.modules.auth.domain.model.UserCredential;
 
 @Mapper(componentModel = "spring", config = AuditMapperConfig.class)
-public abstract class UserCredentialMapper {
+public abstract class UserCredentialApplicationMapper {
     public abstract UserCredentialResult toDto(UserCredential entity);
 
     public abstract UserCredential toEntity(UserCredentialResult dto);

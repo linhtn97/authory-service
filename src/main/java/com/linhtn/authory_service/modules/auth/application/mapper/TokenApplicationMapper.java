@@ -8,7 +8,7 @@ import com.linhtn.authory_service.modules.auth.application.dto.result.TokenResul
 import com.linhtn.authory_service.modules.auth.domain.model.Token;
 
 @Mapper(componentModel = "spring", config = AuditMapperConfig.class)
-public abstract class TokenMapper {
+public abstract class TokenApplicationMapper {
     public abstract TokenResult toDto(Token entity);
 
     public abstract Token toEntity(TokenResult dto);

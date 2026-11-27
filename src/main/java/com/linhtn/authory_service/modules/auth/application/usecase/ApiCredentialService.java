@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.linhtn.authory_service.modules.auth.application.dto.result.ApiCredentialResult;
-import com.linhtn.authory_service.modules.auth.application.mapper.ApiCredentialMapper;
+import com.linhtn.authory_service.modules.auth.application.mapper.ApiCredentialApplicationMapper;
 import com.linhtn.authory_service.modules.auth.application.port.in.ApiCredentialUseCase;
 import com.linhtn.authory_service.modules.auth.domain.model.ApiCredential;
 import com.linhtn.authory_service.modules.auth.domain.repository.ApiCredentialRepository;
@@ -21,12 +21,12 @@ public class ApiCredentialService implements ApiCredentialUseCase {
 
     private final MessageResolver i18nHelper;
     private final ApiCredentialRepository apiCredentialRepository;
-    private final ApiCredentialMapper apiCredentialMapper;
+    private final ApiCredentialApplicationMapper apiCredentialMapper;
 
     public ApiCredentialService(
             MessageResolver i18nHelper,
             ApiCredentialRepository apiCredentialRepository,
-            ApiCredentialMapper apiCredentialMapper) {
+            ApiCredentialApplicationMapper apiCredentialMapper) {
         this.i18nHelper = i18nHelper;
         this.apiCredentialRepository = apiCredentialRepository;
         this.apiCredentialMapper = apiCredentialMapper;

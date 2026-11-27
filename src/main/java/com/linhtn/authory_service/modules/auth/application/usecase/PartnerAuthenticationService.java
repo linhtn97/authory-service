@@ -13,18 +13,18 @@ import com.linhtn.authory_service.modules.auth.application.port.in.ApiCredential
 import com.linhtn.authory_service.modules.auth.application.port.in.PartnerAuthenticationUseCase;
 import com.linhtn.authory_service.modules.partner.application.dto.result.PartnerGetResult;
 import com.linhtn.authory_service.modules.partner.application.port.in.PartnerGetUseCase;
-import com.linhtn.authory_service.modules.rbac.application.port.in.PartnerAuthoryUseCase;
+import com.linhtn.authory_service.modules.rbac.application.port.in.PartnerAuthorityUseCase;
 
 @Service
 public class PartnerAuthenticationService implements PartnerAuthenticationUseCase {
     private final ApiCredentialUseCase apiCredentialUseCase;
     private final PartnerGetUseCase partnerGetUseCase;
-    private final PartnerAuthoryUseCase partnerAuthoryUseCase;
+    private final PartnerAuthorityUseCase partnerAuthoryUseCase;
 
     public PartnerAuthenticationService(
             ApiCredentialUseCase apiCredentialUseCase,
             PartnerGetUseCase partnerGetUseCase,
-            PartnerAuthoryUseCase partnerAuthoryUseCase) {
+            PartnerAuthorityUseCase partnerAuthoryUseCase) {
         this.apiCredentialUseCase = apiCredentialUseCase;
         this.partnerGetUseCase = partnerGetUseCase;
         this.partnerAuthoryUseCase = partnerAuthoryUseCase;

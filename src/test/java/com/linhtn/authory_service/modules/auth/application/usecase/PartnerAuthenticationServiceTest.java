@@ -21,14 +21,14 @@ import com.linhtn.authory_service.modules.auth.application.dto.result.ApiCredent
 import com.linhtn.authory_service.modules.auth.application.port.in.ApiCredentialUseCase;
 import com.linhtn.authory_service.modules.partner.application.dto.result.PartnerGetResult;
 import com.linhtn.authory_service.modules.partner.application.port.in.PartnerGetUseCase;
-import com.linhtn.authory_service.modules.rbac.application.port.in.PartnerAuthoryUseCase;
+import com.linhtn.authory_service.modules.rbac.application.port.in.PartnerAuthorityUseCase;
 
 @ExtendWith(MockitoExtension.class)
 class PartnerAuthenticationServiceTest {
 
     @Mock private ApiCredentialUseCase apiCredentialUseCase;
     @Mock private PartnerGetUseCase partnerGetUseCase;
-    @Mock private PartnerAuthoryUseCase partnerAuthoryUseCase;
+    @Mock private PartnerAuthorityUseCase partnerAuthoryUseCase;
 
     private PartnerAuthenticationService service;
 
@@ -40,7 +40,7 @@ class PartnerAuthenticationServiceTest {
     }
 
     @Test
-    @DisplayName("Should resolve Principal via PartnerGetUseCase and PartnerAuthoryUseCase ports")
+    @DisplayName("Should resolve Principal via PartnerGetUseCase and PartnerAuthorityUseCase ports")
     void shouldResolvePrincipalViaPorts() {
         String clientId = "client-123";
         String hashedSecret = "hashed-secret-456";

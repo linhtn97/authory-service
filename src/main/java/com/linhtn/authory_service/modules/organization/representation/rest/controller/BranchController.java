@@ -43,7 +43,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Organization - Branches", description = "Branch organizational nodes")
 @SecurityRequirement(name = "BearerAuth")
 @RestController
-@RequestMapping("/api/v1/branchs")
+@RequestMapping("/api/v1/branches")
 public class BranchController {
 
     private final BranchCreateUseCase branchCreateUseCase;

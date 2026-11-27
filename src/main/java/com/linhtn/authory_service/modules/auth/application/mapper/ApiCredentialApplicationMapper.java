@@ -8,7 +8,7 @@ import com.linhtn.authory_service.modules.auth.application.dto.result.ApiCredent
 import com.linhtn.authory_service.modules.auth.domain.model.ApiCredential;
 
 @Mapper(componentModel = "spring", config = AuditMapperConfig.class)
-public abstract class ApiCredentialMapper {
+public abstract class ApiCredentialApplicationMapper {
     public abstract ApiCredentialResult toDto(ApiCredential entity);
 
     public abstract ApiCredential toEntity(ApiCredentialResult dto);

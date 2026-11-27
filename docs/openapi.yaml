@@ -2478,7 +2478,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiErrorResponse"
-  /api/v1/branchs:
+  /api/v1/branches:
     get:
       tags:
         - Organization - Branches
@@ -2564,7 +2564,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiErrorResponse"
-  /api/v1/branchs/get-page:
+  /api/v1/branches/get-page:
     post:
       tags:
         - Organization - Branches
@@ -2597,7 +2597,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiErrorResponse"
-  /api/v1/branchs/{id}:
+  /api/v1/branches/{id}:
     get:
       tags:
         - Organization - Branches

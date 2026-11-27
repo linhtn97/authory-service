@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.linhtn.authory_service.modules.auth.application.dto.result.UserCredentialResult;
-import com.linhtn.authory_service.modules.auth.application.mapper.UserCredentialMapper;
+import com.linhtn.authory_service.modules.auth.application.mapper.UserCredentialApplicationMapper;
 import com.linhtn.authory_service.modules.auth.application.port.in.UserCredentialUseCase;
 import com.linhtn.authory_service.modules.auth.domain.model.UserCredential;
 import com.linhtn.authory_service.modules.auth.domain.repository.UserCredentialRepository;
@@ -25,13 +25,13 @@ public class UserCredentialService implements UserCredentialUseCase {
 
     private final MessageResolver i18nHelper;
     private final UserCredentialRepository userCredentialRepository;
-    private final UserCredentialMapper userCredentialMapper;
+    private final UserCredentialApplicationMapper userCredentialMapper;
     private final PasswordEncoder passwordEncoder;
 
     public UserCredentialService(
             MessageResolver i18nHelper,
             UserCredentialRepository userCredentialRepository,
-            UserCredentialMapper userCredentialMapper,
+            UserCredentialApplicationMapper userCredentialMapper,
             PasswordEncoder passwordEncoder) {
         this.i18nHelper = i18nHelper;
         this.userCredentialRepository = userCredentialRepository;

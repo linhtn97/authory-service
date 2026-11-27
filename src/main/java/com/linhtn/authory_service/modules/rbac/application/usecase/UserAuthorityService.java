@@ -14,32 +14,32 @@ import com.linhtn.authory_service.modules.rbac.application.dto.result.GroupGetRe
 import com.linhtn.authory_service.modules.rbac.application.dto.result.ResourceGetResult;
 import com.linhtn.authory_service.modules.rbac.application.dto.result.RoleGetResult;
 import com.linhtn.authory_service.modules.rbac.application.port.in.GroupPermissionUseCase;
-import com.linhtn.authory_service.modules.rbac.application.port.in.PartnerAuthoryUseCase;
-import com.linhtn.authory_service.modules.rbac.application.port.in.PartnerGroupUseCase;
-import com.linhtn.authory_service.modules.rbac.application.port.in.PartnerResourceUseCase;
-import com.linhtn.authory_service.modules.rbac.application.port.in.PartnerRoleUseCase;
 import com.linhtn.authory_service.modules.rbac.application.port.in.ResourcePermissionUseCase;
 import com.linhtn.authory_service.modules.rbac.application.port.in.RolePermissionUseCase;
+import com.linhtn.authory_service.modules.rbac.application.port.in.UserAuthorityUseCase;
+import com.linhtn.authory_service.modules.rbac.application.port.in.UserGroupUseCase;
+import com.linhtn.authory_service.modules.rbac.application.port.in.UserResourceUseCase;
+import com.linhtn.authory_service.modules.rbac.application.port.in.UserRoleUseCase;
 
 @Service
-public class PartnerAuthoryService implements PartnerAuthoryUseCase {
-    private final PartnerRoleUseCase partnerRoleUseCase;
-    private final PartnerGroupUseCase partnerGroupUseCase;
-    private final PartnerResourceUseCase partnerResourceUseCase;
+public class UserAuthorityService implements UserAuthorityUseCase {
+    private final UserRoleUseCase userRoleUseCase;
+    private final UserGroupUseCase userGroupUseCase;
+    private final UserResourceUseCase userResourceUseCase;
     private final RolePermissionUseCase rolePermissionUseCase;
     private final GroupPermissionUseCase groupPermissionUseCase;
     private final ResourcePermissionUseCase resourcePermissionUseCase;
 
-    public PartnerAuthoryService(
-            PartnerRoleUseCase partnerRoleUseCase,
-            PartnerGroupUseCase partnerGroupUseCase,
-            PartnerResourceUseCase partnerResourceUseCase,
+    public UserAuthorityService(
+            UserRoleUseCase userRoleUseCase,
+            UserGroupUseCase userGroupUseCase,
+            UserResourceUseCase userResourceUseCase,
             RolePermissionUseCase rolePermissionUseCase,
             GroupPermissionUseCase groupPermissionUseCase,
             ResourcePermissionUseCase resourcePermissionUseCase) {
-        this.partnerRoleUseCase = partnerRoleUseCase;
-        this.partnerGroupUseCase = partnerGroupUseCase;
-        this.partnerResourceUseCase = partnerResourceUseCase;
+        this.userRoleUseCase = userRoleUseCase;
+        this.userGroupUseCase = userGroupUseCase;
+        this.userResourceUseCase = userResourceUseCase;
         this.rolePermissionUseCase = rolePermissionUseCase;
         this.groupPermissionUseCase = groupPermissionUseCase;
         this.resourcePermissionUseCase = resourcePermissionUseCase;
@@ -51,12 +51,11 @@ public class PartnerAuthoryService implements PartnerAuthoryUseCase {
     }
 
     @Override
-    @Cacheable(value = "partner-authorities", key = "#partnerId")
-    public PrincipalAuthorities getAuthorities(UUID partnerId) {
-
-        List<RoleGetResult> roles = partnerRoleUseCase.getRoles(partnerId);
-        List<GroupGetResult> groups = partnerGroupUseCase.getGroups(partnerId);
-        List<ResourceGetResult> resources = partnerResourceUseCase.getResources(partnerId);
+    @Cacheable(value = "user-authorities", key = "#userId")
+    public PrincipalAuthorities getAuthorities(UUID userId) {
+        List<RoleGetResult> roles = userRoleUseCase.getRoles(userId);
+        List<GroupGetResult> groups = userGroupUseCase.getGroups(userId);
+        List<ResourceGetResult> resources = userResourceUseCase.getResources(userId);
 
         Set<String> roleCodes =
                 roles.stream().map(RoleGetResult::getCode).collect(Collectors.toSet());

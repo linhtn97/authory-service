@@ -10,19 +10,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import com.linhtn.authory_service.modules.auth.application.port.in.TokenBlacklistService;
+import com.linhtn.authory_service.modules.auth.application.port.in.TokenBlacklistUseCase;
 
 @Service
-public class TokenBlacklistServiceImpl implements TokenBlacklistService {
-    private static final Logger log = LoggerFactory.getLogger(TokenBlacklistServiceImpl.class);
+public class TokenBlacklistService implements TokenBlacklistUseCase {
+    private static final Logger log = LoggerFactory.getLogger(TokenBlacklistService.class);
     private static final String BLACKLIST_KEY_PREFIX = "authory:blacklist:jti:";
 
     private final StringRedisTemplate redisTemplate;
     // Local fallback in case Redis is unavailable during testing or dev
     private final Map<String, Long> localBlacklist = new ConcurrentHashMap<>();
 
-    public TokenBlacklistServiceImpl(
-            @Autowired(required = false) StringRedisTemplate redisTemplate) {
+    public TokenBlacklistService(@Autowired(required = false) StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 

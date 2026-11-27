@@ -26,7 +26,7 @@ import com.linhtn.authory_service.modules.rbac.application.port.in.UserResourceU
 import com.linhtn.authory_service.modules.rbac.application.port.in.UserRoleUseCase;
 
 @ExtendWith(MockitoExtension.class)
-class UserAuthoryServiceTest {
+class UserAuthorityServiceTest {
 
     @Mock private UserRoleUseCase userRoleUseCase;
     @Mock private UserGroupUseCase userGroupUseCase;
@@ -35,12 +35,12 @@ class UserAuthoryServiceTest {
     @Mock private GroupPermissionUseCase groupPermissionUseCase;
     @Mock private ResourcePermissionUseCase resourcePermissionUseCase;
 
-    private UserAuthoryService service;
+    private UserAuthorityService service;
 
     @BeforeEach
     void setUp() {
         service =
-                new UserAuthoryService(
+                new UserAuthorityService(
                         userRoleUseCase,
                         userGroupUseCase,
                         userResourceUseCase,
