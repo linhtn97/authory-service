@@ -67,7 +67,7 @@ management:
 
 # Enterprise Platform Configurations (be-platform)
 platform:
-  # 1. Web Core & i18n
+  # 1. Web Core & i18n (platform-web-core)
   web:
     i18n:
       enabled: true
@@ -86,15 +86,34 @@ platform:
       enabled: true
     paging-resolver:
       enabled: true
-      default-page: 0
-      default-page-size: 20
-      max-page-size: 100
+    cors:
+      enabled: false
+      path-pattern: "/**"
+      allowed-origins: [ ]
+      allowed-methods: [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ]
+      allowed-headers: [ "*" ]
+      exposed-headers: [ "X-Trace-Id", "X-Correlation-Id" ]
+      allow-credentials: true
+      max-age: 3600
     security-headers:
       enabled: true
+      content-type-options: "nosniff"
+      frame-options: "DENY"
+      referrer-policy: "strict-origin-when-cross-origin"
+      xss-protection: "0"
     logging:
       enabled: false
+      slow-request-threshold-ms: 1000
+      include-headers: false
+      mask-headers:
+        - authorization
+        - cookie
+        - x-api-key
+      exclude-paths:
+        - /actuator/**
+        - /favicon.ico
 
-  # 2. Distributed Cache & Redis (cache-core & cache-redis)
+  # 2. Distributed Cache & Redis (platform-cache-core & platform-cache-redis)
   cache:
     enabled: true
     key-prefix: "authory"
@@ -117,14 +136,16 @@ platform:
       retry-attempts: 3
       retry-interval: 1s
 
-  # 3. Data Core & JPA (data-core & data-jpa)
+  # 3. Data Core & JPA (platform-data-core & platform-data-jpa)
   data:
+    audit-enabled: true
+    soft-delete-enabled: false
     jpa:
       enabled: true
-      auditing-enabled: false
+      auditing-enabled: false # Custom Auditing handled by Authory service entities
       default-auditor: "SYSTEM"
 
-  # 4. Mutation Replay Protection (idempotency-core)
+  # 4. Mutation Replay Protection (platform-idempotency-core)
   idempotency:
     enabled: true
     header-name: "Idempotency-Key"
@@ -133,8 +154,17 @@ platform:
     lock-lease-time: 30s
     enforce-payload-match: true
     evict-on-failure: true
+    applicable-methods:
+      - POST
+      - PUT
+      - PATCH
+    excluded-path-prefixes:
+      - /actuator
+      - /favicon.ico
+      - /v3/api-docs
+      - /swagger-ui
 
-  # 5. Distributed Sliding Window Rate Limiting (platform: ratelimit-core & ratelimit-redis)
+  # 5. Distributed Sliding Window Rate Limiting (platform-ratelimit-core & platform-ratelimit-redis)
   ratelimit:
     enabled: true
     filter-enabled: true
@@ -176,13 +206,20 @@ platform:
         headers: true
         message: "Too many password reset attempts. Please try again after 1 minute."
 
-  # 6. Distributed Tracing & W3C Context (tracing-core)
+  # 6. Distributed Tracing & W3C Context (platform-tracing-core)
   tracing:
     enabled: true
     correlation-header: "X-Correlation-Id"
     trace-response-headers: true
 
-  # 7. OpenAPI 3 Contracts (openapi-core)
+  # 7. Pure Security Port & Declarative Annotations (platform-security-core)
+  security:
+    enabled: true
+    aop-enabled: true # Enables @RequireRole and @RequirePermission aspect evaluation
+    web-resolver-enabled: true # Resolves @CurrentUser AuthenticatedUser in controllers
+    exception-handler-enabled: true # Handles platform security exceptions
+
+  # 8. OpenAPI 3 Contracts & Swagger UI (platform-openapi-core)
   openapi:
     enabled: true
     title: Authory Service API
@@ -191,12 +228,15 @@ platform:
     contact:
       name: Authory Service Team
       email: support@linhtn.com
+      url: https://authory.internal
     servers:
       - url: /
         description: Default Server Root
     security:
       jwt-enabled: true
+      jwt-scheme-name: "bearerAuth"
       api-key-enabled: false
+      tenant-header-enabled: false
     standard-responses-enabled: true
 
 springdoc:
