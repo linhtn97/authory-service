@@ -30,10 +30,10 @@ import com.linhtn.authory_service.modules.auth.application.port.in.TokenBlacklis
 import com.linhtn.authory_service.modules.auth.application.port.in.TokenUseCase;
 import com.linhtn.authory_service.modules.auth.application.port.in.UserAuthenticationUseCase;
 import com.linhtn.authory_service.modules.auth.application.port.in.UserCredentialUseCase;
+import com.linhtn.authory_service.modules.auth.domain.model.PasswordResetToken;
+import com.linhtn.authory_service.modules.auth.domain.repository.PasswordResetTokenRepository;
 import com.linhtn.authory_service.modules.auth.exception.error.UserCredentialError;
 import com.linhtn.authory_service.modules.auth.exception.unchecked.UserCredentialInvalidException;
-import com.linhtn.authory_service.modules.auth.infrastructure.persistence.jpa.entity.PasswordResetTokenEntity;
-import com.linhtn.authory_service.modules.auth.infrastructure.persistence.jpa.repository.PasswordResetTokenJpaRepository;
 import com.linhtn.authory_service.modules.rbac.application.port.in.UserAuthorityUseCase;
 import com.linhtn.authory_service.modules.user.application.dto.command.UserCreateCommand;
 import com.linhtn.authory_service.modules.user.application.dto.result.UserCreateResult;
@@ -54,7 +54,7 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
     private final TokenUseCase tokenUseCase;
     private final JwtProvider jwtProvider;
     private final UserAuthorityUseCase userAuthoryUseCase;
-    private final PasswordResetTokenJpaRepository passwordResetTokenJpaRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final TokenBlacklistUseCase tokenBlacklistUseCase;
     private final ApiCredentialUseCase apiCredentialUseCase;
 
@@ -67,7 +67,7 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
             TokenUseCase tokenUseCase,
             JwtProvider jwtProvider,
             UserAuthorityUseCase userAuthoryUseCase,
-            PasswordResetTokenJpaRepository passwordResetTokenJpaRepository,
+            PasswordResetTokenRepository passwordResetTokenRepository,
             ApiCredentialUseCase apiCredentialUseCase) {
         this(
                 i18nHelper,
@@ -78,8 +78,10 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
                 tokenUseCase,
                 jwtProvider,
                 userAuthoryUseCase,
-                passwordResetTokenJpaRepository,
-                new TokenBlacklistService(null),
+                passwordResetTokenRepository,
+                new TokenBlacklistService(
+                        new com.linhtn.authory_service.modules.auth.infrastructure.persistence
+                                .RedisTokenBlacklistAdapter(null)),
                 apiCredentialUseCase);
     }
 
@@ -93,7 +95,7 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
             TokenUseCase tokenUseCase,
             JwtProvider jwtProvider,
             UserAuthorityUseCase userAuthoryUseCase,
-            PasswordResetTokenJpaRepository passwordResetTokenJpaRepository,
+            PasswordResetTokenRepository passwordResetTokenRepository,
             TokenBlacklistUseCase tokenBlacklistUseCase,
             ApiCredentialUseCase apiCredentialUseCase) {
         this.i18nHelper = i18nHelper;
@@ -104,7 +106,7 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
         this.tokenUseCase = tokenUseCase;
         this.jwtProvider = jwtProvider;
         this.userAuthoryUseCase = userAuthoryUseCase;
-        this.passwordResetTokenJpaRepository = passwordResetTokenJpaRepository;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.tokenBlacklistUseCase = tokenBlacklistUseCase;
         this.apiCredentialUseCase = apiCredentialUseCase;
     }
@@ -368,15 +370,15 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
                             String rawToken = UUID.randomUUID().toString();
                             String tokenHash = hashToken(rawToken);
 
-                            PasswordResetTokenEntity entity =
-                                    PasswordResetTokenEntity.builder()
+                            PasswordResetToken domainModel =
+                                    PasswordResetToken.builder()
                                             .userId(user.getId())
                                             .tokenHash(tokenHash)
                                             .expiresAt(LocalDateTime.now().plusMinutes(15))
                                             .used(false)
                                             .build();
 
-                            passwordResetTokenJpaRepository.save(entity);
+                            passwordResetTokenRepository.save(domainModel);
                         });
     }
 
@@ -384,8 +386,8 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
     @Transactional
     public void resetPasswordWithToken(String token, String newPassword) {
         String tokenHash = hashToken(token);
-        PasswordResetTokenEntity resetToken =
-                passwordResetTokenJpaRepository
+        PasswordResetToken resetToken =
+                passwordResetTokenRepository
                         .findByTokenHashAndUsedIsFalse(tokenHash)
                         .orElseThrow(
                                 () ->
@@ -407,7 +409,7 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
         userCredentialUseCase.resetPassword(
                 resetToken.getUserId(), passwordEncoder.encode(newPassword));
         resetToken.setUsed(true);
-        passwordResetTokenJpaRepository.save(resetToken);
+        passwordResetTokenRepository.save(resetToken);
 
         tokenUseCase.revokeAllByUserId(resetToken.getUserId());
     }
