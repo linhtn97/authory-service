@@ -13,6 +13,7 @@ import com.linhtn.authory_service.modules.activity.representation.rest.mapper.Sy
 import com.linhtn.authory_service.modules.dashboard.application.port.in.DashboardGetMetricsUseCase;
 import com.linhtn.authory_service.modules.dashboard.representation.rest.dto.response.DashboardGetMetricsResponse;
 import com.linhtn.authory_service.modules.dashboard.representation.rest.mapper.DashboardRestMapper;
+import com.linhtn.security_core.annotation.RequirePermission;
 import com.linhtn.security_core.annotation.RequireRole;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequireRole({"ADMIN", "SUPER_ADMIN"})
+@RequirePermission("RBAC:MANAGE")
 @RequestMapping("/api/v1/dashboard")
 @RequiredArgsConstructor
 public class DashboardController {

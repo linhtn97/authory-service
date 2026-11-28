@@ -28,6 +28,7 @@ import com.linhtn.authory_service.modules.organization.representation.rest.dto.r
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.DivisionGetResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.DivisionUpdateResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.mapper.DivisionRestMapper;
+import com.linhtn.security_core.annotation.RequirePermission;
 import com.linhtn.security_core.annotation.RequireRole;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
@@ -70,6 +71,7 @@ public class DivisionController {
             summary = "Query divisions with params",
             description = "Simple paginated list of divisions.")
     @GetMapping
+    @RequirePermission("ORG:READ")
     public ResponseEntity<PagingResponse<DivisionGetResponse>> getPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int pageSize,
@@ -99,6 +101,7 @@ public class DivisionController {
             summary = "Dynamic query pagination (POST)",
             description = "Dynamic criteria query for divisions.")
     @PostMapping("/get-page")
+    @RequirePermission("ORG:READ")
     public ResponseEntity<PagingResponse<DivisionGetResponse>> getPage(
             @Valid @RequestBody PagingRequest req) {
         return ResponseEntity.ok(
@@ -111,6 +114,7 @@ public class DivisionController {
         @ApiResponse(responseCode = "404", description = "Division not found")
     })
     @GetMapping("/{id}")
+    @RequirePermission("ORG:READ")
     public ResponseEntity<DivisionGetResponse> get(
             @Parameter(description = "Division UUID", required = true) @PathVariable UUID id) {
         return ResponseEntity.ok(DivisionRestMapper.toGetResponse(divisionGetUseCase.execute(id)));
@@ -122,6 +126,7 @@ public class DivisionController {
         @ApiResponse(responseCode = "400", description = "Invalid payload")
     })
     @PostMapping
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<DivisionCreateResponse> create(
             @Valid @RequestBody DivisionCreateRequest req) {
         var result = divisionCreateUseCase.execute(DivisionRestMapper.toCommand(req));
@@ -136,6 +141,7 @@ public class DivisionController {
         @ApiResponse(responseCode = "409", description = "Optimistic locking conflict")
     })
     @PutMapping("/{id}")
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<DivisionUpdateResponse> update(
             @Parameter(description = "Division UUID", required = true) @PathVariable UUID id,
             @Valid @RequestBody DivisionUpdateRequest req) {
@@ -149,6 +155,7 @@ public class DivisionController {
         @ApiResponse(responseCode = "404", description = "Division not found")
     })
     @DeleteMapping("/{id}")
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<Void> delete(
             @Parameter(description = "Division UUID", required = true) @PathVariable UUID id) {
         divisionDeleteUseCase.execute(id);

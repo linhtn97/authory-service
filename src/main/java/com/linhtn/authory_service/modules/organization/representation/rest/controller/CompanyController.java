@@ -28,6 +28,7 @@ import com.linhtn.authory_service.modules.organization.representation.rest.dto.r
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.CompanyGetResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.CompanyUpdateResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.mapper.CompanyRestMapper;
+import com.linhtn.security_core.annotation.RequirePermission;
 import com.linhtn.security_core.annotation.RequireRole;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
@@ -70,6 +71,7 @@ public class CompanyController {
             summary = "Query companies with params",
             description = "Simple paginated list of companies.")
     @GetMapping
+    @RequirePermission("ORG:READ")
     public ResponseEntity<PagingResponse<CompanyGetResponse>> getPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int pageSize,
@@ -99,6 +101,7 @@ public class CompanyController {
             summary = "Dynamic query pagination (POST)",
             description = "Dynamic criteria query for companies.")
     @PostMapping("/get-page")
+    @RequirePermission("ORG:READ")
     public ResponseEntity<PagingResponse<CompanyGetResponse>> getPage(
             @Valid @RequestBody PagingRequest req) {
         return ResponseEntity.ok(
@@ -111,6 +114,7 @@ public class CompanyController {
         @ApiResponse(responseCode = "404", description = "Company not found")
     })
     @GetMapping("/{id}")
+    @RequirePermission("ORG:READ")
     public ResponseEntity<CompanyGetResponse> get(
             @Parameter(description = "Company UUID", required = true) @PathVariable UUID id) {
         return ResponseEntity.ok(CompanyRestMapper.toGetResponse(companyGetUseCase.execute(id)));
@@ -122,6 +126,7 @@ public class CompanyController {
         @ApiResponse(responseCode = "400", description = "Invalid payload")
     })
     @PostMapping
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<CompanyCreateResponse> create(
             @Valid @RequestBody CompanyCreateRequest req) {
         var result = companyCreateUseCase.execute(CompanyRestMapper.toCommand(req));
@@ -138,6 +143,7 @@ public class CompanyController {
         @ApiResponse(responseCode = "409", description = "Optimistic locking conflict")
     })
     @PutMapping("/{id}")
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<CompanyUpdateResponse> update(
             @Parameter(description = "Company UUID", required = true) @PathVariable UUID id,
             @Valid @RequestBody CompanyUpdateRequest req) {
@@ -151,6 +157,7 @@ public class CompanyController {
         @ApiResponse(responseCode = "404", description = "Company not found")
     })
     @DeleteMapping("/{id}")
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<Void> delete(
             @Parameter(description = "Company UUID", required = true) @PathVariable UUID id) {
         companyDeleteUseCase.execute(id);

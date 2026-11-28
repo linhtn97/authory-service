@@ -203,9 +203,9 @@ class ControllerSecurityAuthorizationTest {
     }
 
     @Test
-    @DisplayName("Edge Case 6: Admin user is permitted on RoleController")
+    @DisplayName("Edge Case 6: Admin user with RBAC:MANAGE is permitted on RoleController")
     void testClassLevelRolePermitted() {
-        authenticate(Set.of("ADMIN"), Set.of(), Set.of());
+        authenticate(Set.of("ADMIN"), Set.of(), Set.of("RBAC:MANAGE"));
         UUID roleId = UUID.randomUUID();
 
         // Method execution passes security check without throwing authorization errors

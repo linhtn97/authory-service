@@ -28,6 +28,7 @@ import com.linhtn.authory_service.modules.organization.representation.rest.dto.r
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.CenterGetResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.CenterUpdateResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.mapper.CenterRestMapper;
+import com.linhtn.security_core.annotation.RequirePermission;
 import com.linhtn.security_core.annotation.RequireRole;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
@@ -70,6 +71,7 @@ public class CenterController {
             summary = "Query centers with params",
             description = "Simple paginated list of centers.")
     @GetMapping
+    @RequirePermission("ORG:READ")
     public ResponseEntity<PagingResponse<CenterGetResponse>> getPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int pageSize,
@@ -99,6 +101,7 @@ public class CenterController {
             summary = "Dynamic query pagination (POST)",
             description = "Dynamic criteria query for centers.")
     @PostMapping("/get-page")
+    @RequirePermission("ORG:READ")
     public ResponseEntity<PagingResponse<CenterGetResponse>> getPage(
             @Valid @RequestBody PagingRequest req) {
         return ResponseEntity.ok(CenterRestMapper.toGetResponse(centerGetPageUseCase.execute(req)));
@@ -110,6 +113,7 @@ public class CenterController {
         @ApiResponse(responseCode = "404", description = "Center not found")
     })
     @GetMapping("/{id}")
+    @RequirePermission("ORG:READ")
     public ResponseEntity<CenterGetResponse> get(
             @Parameter(description = "Center UUID", required = true) @PathVariable UUID id) {
         return ResponseEntity.ok(CenterRestMapper.toGetResponse(centerGetUseCase.execute(id)));
@@ -121,6 +125,7 @@ public class CenterController {
         @ApiResponse(responseCode = "400", description = "Invalid payload")
     })
     @PostMapping
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<CenterCreateResponse> create(
             @Valid @RequestBody CenterCreateRequest req) {
         var result = centerCreateUseCase.execute(CenterRestMapper.toCommand(req));
@@ -135,6 +140,7 @@ public class CenterController {
         @ApiResponse(responseCode = "409", description = "Optimistic locking conflict")
     })
     @PutMapping("/{id}")
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<CenterUpdateResponse> update(
             @Parameter(description = "Center UUID", required = true) @PathVariable UUID id,
             @Valid @RequestBody CenterUpdateRequest req) {
@@ -148,6 +154,7 @@ public class CenterController {
         @ApiResponse(responseCode = "404", description = "Center not found")
     })
     @DeleteMapping("/{id}")
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<Void> delete(
             @Parameter(description = "Center UUID", required = true) @PathVariable UUID id) {
         centerDeleteUseCase.execute(id);

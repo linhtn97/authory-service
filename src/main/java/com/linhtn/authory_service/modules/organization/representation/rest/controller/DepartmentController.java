@@ -28,6 +28,7 @@ import com.linhtn.authory_service.modules.organization.representation.rest.dto.r
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.DepartmentGetResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.DepartmentUpdateResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.mapper.DepartmentRestMapper;
+import com.linhtn.security_core.annotation.RequirePermission;
 import com.linhtn.security_core.annotation.RequireRole;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
@@ -70,6 +71,7 @@ public class DepartmentController {
             summary = "Query departments with params",
             description = "Simple paginated list of departments.")
     @GetMapping
+    @RequirePermission("ORG:READ")
     public ResponseEntity<PagingResponse<DepartmentGetResponse>> getPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int pageSize,
@@ -99,6 +101,7 @@ public class DepartmentController {
             summary = "Dynamic query pagination (POST)",
             description = "Dynamic criteria query for departments.")
     @PostMapping("/get-page")
+    @RequirePermission("ORG:READ")
     public ResponseEntity<PagingResponse<DepartmentGetResponse>> getPage(
             @Valid @RequestBody PagingRequest req) {
         return ResponseEntity.ok(
@@ -113,6 +116,7 @@ public class DepartmentController {
         @ApiResponse(responseCode = "404", description = "Department not found")
     })
     @GetMapping("/{id}")
+    @RequirePermission("ORG:READ")
     public ResponseEntity<DepartmentGetResponse> get(
             @Parameter(description = "Department UUID", required = true) @PathVariable UUID id) {
         return ResponseEntity.ok(
@@ -125,6 +129,7 @@ public class DepartmentController {
         @ApiResponse(responseCode = "400", description = "Invalid payload")
     })
     @PostMapping
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<DepartmentCreateResponse> create(
             @Valid @RequestBody DepartmentCreateRequest req) {
         var result = departmentCreateUseCase.execute(DepartmentRestMapper.toCommand(req));
@@ -139,6 +144,7 @@ public class DepartmentController {
         @ApiResponse(responseCode = "409", description = "Optimistic locking conflict")
     })
     @PutMapping("/{id}")
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<DepartmentUpdateResponse> update(
             @Parameter(description = "Department UUID", required = true) @PathVariable UUID id,
             @Valid @RequestBody DepartmentUpdateRequest req) {
@@ -152,6 +158,7 @@ public class DepartmentController {
         @ApiResponse(responseCode = "404", description = "Department not found")
     })
     @DeleteMapping("/{id}")
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<Void> delete(
             @Parameter(description = "Department UUID", required = true) @PathVariable UUID id) {
         departmentDeleteUseCase.execute(id);

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.linhtn.authory_service.modules.activity.application.port.in.SystemActivityGetRecentUseCase;
 import com.linhtn.authory_service.modules.activity.representation.rest.dto.response.SystemActivityGetRecentResponse;
 import com.linhtn.authory_service.modules.activity.representation.rest.mapper.SystemActivityRestMapper;
+import com.linhtn.security_core.annotation.RequirePermission;
 import com.linhtn.security_core.annotation.RequireRole;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequireRole({"ADMIN", "SUPER_ADMIN"})
+@RequirePermission("RBAC:MANAGE")
 @RequestMapping("/api/v1/activities")
 @RequiredArgsConstructor
 public class ActivityController {

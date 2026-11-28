@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.linhtn.authory_service.modules.rbac.application.port.in.UserGroupUseCase;
 import com.linhtn.authory_service.modules.rbac.representation.rest.dto.response.GroupGetResponse;
 import com.linhtn.authory_service.modules.rbac.representation.rest.mapper.GroupRestMapper;
+import com.linhtn.security_core.annotation.RequirePermission;
 import com.linhtn.security_core.annotation.RequireRole;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +30,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequireRole({"ADMIN", "SUPER_ADMIN"})
+@RequirePermission("RBAC:MANAGE")
 @RequestMapping("/api/v1/users")
 public class UserGroupController {
 

@@ -28,6 +28,7 @@ import com.linhtn.authory_service.modules.organization.representation.rest.dto.r
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.BranchGetResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.BranchUpdateResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.mapper.BranchRestMapper;
+import com.linhtn.security_core.annotation.RequirePermission;
 import com.linhtn.security_core.annotation.RequireRole;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
@@ -70,6 +71,7 @@ public class BranchController {
             summary = "Query branches with params",
             description = "Simple paginated list of branches.")
     @GetMapping
+    @RequirePermission("ORG:READ")
     public ResponseEntity<PagingResponse<BranchGetResponse>> getPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int pageSize,
@@ -99,6 +101,7 @@ public class BranchController {
             summary = "Dynamic query pagination (POST)",
             description = "Dynamic criteria query for branches.")
     @PostMapping("/get-page")
+    @RequirePermission("ORG:READ")
     public ResponseEntity<PagingResponse<BranchGetResponse>> getPage(
             @Valid @RequestBody PagingRequest req) {
         return ResponseEntity.ok(BranchRestMapper.toGetResponse(branchGetPageUseCase.execute(req)));
@@ -110,6 +113,7 @@ public class BranchController {
         @ApiResponse(responseCode = "404", description = "Branch not found")
     })
     @GetMapping("/{id}")
+    @RequirePermission("ORG:READ")
     public ResponseEntity<BranchGetResponse> get(
             @Parameter(description = "Branch UUID", required = true) @PathVariable UUID id) {
         return ResponseEntity.ok(BranchRestMapper.toGetResponse(branchGetUseCase.execute(id)));
@@ -121,6 +125,7 @@ public class BranchController {
         @ApiResponse(responseCode = "400", description = "Invalid payload")
     })
     @PostMapping
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<BranchCreateResponse> create(
             @Valid @RequestBody BranchCreateRequest req) {
         var result = branchCreateUseCase.execute(BranchRestMapper.toCommand(req));
@@ -137,6 +142,7 @@ public class BranchController {
         @ApiResponse(responseCode = "409", description = "Optimistic locking conflict")
     })
     @PutMapping("/{id}")
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<BranchUpdateResponse> update(
             @Parameter(description = "Branch UUID", required = true) @PathVariable UUID id,
             @Valid @RequestBody BranchUpdateRequest req) {
@@ -150,6 +156,7 @@ public class BranchController {
         @ApiResponse(responseCode = "404", description = "Branch not found")
     })
     @DeleteMapping("/{id}")
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<Void> delete(
             @Parameter(description = "Branch UUID", required = true) @PathVariable UUID id) {
         branchDeleteUseCase.execute(id);

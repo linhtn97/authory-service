@@ -28,6 +28,7 @@ import com.linhtn.authory_service.modules.rbac.representation.rest.dto.response.
 import com.linhtn.authory_service.modules.rbac.representation.rest.dto.response.GroupGetResponse;
 import com.linhtn.authory_service.modules.rbac.representation.rest.dto.response.GroupUpdateResponse;
 import com.linhtn.authory_service.modules.rbac.representation.rest.mapper.GroupRestMapper;
+import com.linhtn.security_core.annotation.RequirePermission;
 import com.linhtn.security_core.annotation.RequireRole;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
@@ -44,6 +45,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequireRole({"ADMIN", "SUPER_ADMIN"})
+@RequirePermission("RBAC:MANAGE")
 @RequestMapping("/api/v1/groups")
 public class GroupController {
 

@@ -28,6 +28,7 @@ import com.linhtn.authory_service.modules.organization.representation.rest.dto.r
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.PositionGetResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.PositionUpdateResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.mapper.PositionRestMapper;
+import com.linhtn.security_core.annotation.RequirePermission;
 import com.linhtn.security_core.annotation.RequireRole;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
@@ -70,6 +71,7 @@ public class PositionController {
             summary = "Query positions with params",
             description = "Simple paginated list of staff positions.")
     @GetMapping
+    @RequirePermission("ORG:READ")
     public ResponseEntity<PagingResponse<PositionGetResponse>> getPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int pageSize,
@@ -99,6 +101,7 @@ public class PositionController {
             summary = "Dynamic query pagination (POST)",
             description = "Dynamic criteria query for positions.")
     @PostMapping("/get-page")
+    @RequirePermission("ORG:READ")
     public ResponseEntity<PagingResponse<PositionGetResponse>> getPage(
             @Valid @RequestBody PagingRequest req) {
         return ResponseEntity.ok(
@@ -111,6 +114,7 @@ public class PositionController {
         @ApiResponse(responseCode = "404", description = "Position not found")
     })
     @GetMapping("/{id}")
+    @RequirePermission("ORG:READ")
     public ResponseEntity<PositionGetResponse> get(
             @Parameter(description = "Position UUID", required = true) @PathVariable UUID id) {
         return ResponseEntity.ok(PositionRestMapper.toGetResponse(positionGetUseCase.execute(id)));
@@ -122,6 +126,7 @@ public class PositionController {
         @ApiResponse(responseCode = "400", description = "Invalid payload")
     })
     @PostMapping
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<PositionCreateResponse> create(
             @Valid @RequestBody PositionCreateRequest req) {
         var result = positionCreateUseCase.execute(PositionRestMapper.toCommand(req));
@@ -136,6 +141,7 @@ public class PositionController {
         @ApiResponse(responseCode = "409", description = "Optimistic locking conflict")
     })
     @PutMapping("/{id}")
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<PositionUpdateResponse> update(
             @Parameter(description = "Position UUID", required = true) @PathVariable UUID id,
             @Valid @RequestBody PositionUpdateRequest req) {
@@ -149,6 +155,7 @@ public class PositionController {
         @ApiResponse(responseCode = "404", description = "Position not found")
     })
     @DeleteMapping("/{id}")
+    @RequirePermission("ORG:WRITE")
     public ResponseEntity<Void> delete(
             @Parameter(description = "Position UUID", required = true) @PathVariable UUID id) {
         positionDeleteUseCase.execute(id);

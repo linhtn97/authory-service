@@ -28,6 +28,7 @@ import com.linhtn.authory_service.modules.abac.representation.rest.dto.response.
 import com.linhtn.authory_service.modules.abac.representation.rest.dto.response.AttributeGetResponse;
 import com.linhtn.authory_service.modules.abac.representation.rest.dto.response.AttributeUpdateResponse;
 import com.linhtn.authory_service.modules.abac.representation.rest.mapper.AttributeRestMapper;
+import com.linhtn.security_core.annotation.RequirePermission;
 import com.linhtn.security_core.annotation.RequireRole;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
@@ -46,6 +47,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequireRole({"ADMIN", "SUPER_ADMIN"})
+@RequirePermission("RBAC:MANAGE")
 @RequestMapping("/api/v1/attributes")
 public class AttributeController {
 
