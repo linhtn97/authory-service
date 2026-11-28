@@ -14,8 +14,8 @@ The system is implemented as a **Modular Monolith** adhering strictly to **Hexag
    - **Outbound Ports (Driven):** Repository and service interfaces required by the application (`domain/repository`).
    - **Outbound Adapters:** Persistence adapters wrapping Spring Data JPA, queries, and ORM entities (`infrastructure/persistence`).
 3. **Strict CQRS Segregation:** Every operational intent is divided into single-purpose components (`*CreateUseCase`, `*GetUseCase`, `*GetPageUseCase`, `*UpdateUseCase`, `*DeleteUseCase`), driven by explicit `*Command` payloads and returning isolated `*Result` objects.
-4. **Flyway Enterprise Database Migrations:** Fully versioned DDL migrations across 5 schemas (`auth`, `partner`, `organization`, `rbac`, `abac`) managing 26 tables, constraints, and indexes.
-5. **High-Performance Caching & Eviction:** Authority evaluations (`user-authorities`, `partner-authorities`) are cached with `@Cacheable` and automatically evicted with `@CacheEvict` when roles, permissions, groups, or resources are modified.
+4. **Flyway Enterprise Database Migrations:** Fully versioned DDL migrations across schemas (`auth`, `organization`, `rbac`, `abac`, `public`) managing tables, constraints, and indexes.
+5. **High-Performance Caching & Eviction:** Authority evaluations (`user-authorities`, `user-principals`) are cached with `@Cacheable` and automatically evicted with `@CacheEvict` when roles, permissions, groups, or resources are modified.
 6. **Multi-Factor Authentication (MFA / 2FA via TOTP):** Native RFC 6238 TOTP engine built into the core without external dependencies, supporting QR code enrollment and 2-step verification with short-lived `MFA_PENDING` tokens.
 7. **Brute-Force Account Lockout:** Tracks failed login attempts per user credential. Exceeding 5 failed attempts locks the account for 15 minutes, with an administrative unlock API.
 8. **Active Device Session Management:** Captures client IP, User-Agent, and device metadata on token creation, with endpoints to view and remotely revoke sessions.
@@ -31,20 +31,20 @@ graph TD
     subgraph External_Clients ["External Clients & Consumers"]
         SPA["Single Page App / Web UI"]
         MOBILE["Mobile Applications"]
-        PARTNER_CLI["B2B Partner Services"]
+        API_CLIENTS["Microservices & API Clients (JWT, API Key)"]
     end
 
     subgraph Security_Filters ["Security & Observability Pipeline"]
         CORR_FILTER["TracingFilter<br/>(tracing-core & X-Correlation-Id)"]
         RATE_FILTER["RateLimitingFilter<br/>(Sliding Window Token Bucket)"]
-        JWT_FILTER["JwtAuthorizationFilter<br/>(Stateless JWT & Authorities)"]
+        JWT_FILTER["JwtAuthorizationFilter<br/>(Stateless JWT, API Key & Authorities)"]
     end
 
     subgraph Representation_Layer ["Inbound Adapters (Representation Layer)"]
         REST_AUTH["AuthenticationController<br/>(Login, MFA, Reset Password)"]
+        REST_PRINCIPAL["PrincipalController<br/>(JWT, API Key, Client Creds)"]
         REST_SESSION["SessionController<br/>(Device Session Management)"]
         REST_USER["UserController<br/>(CRUD & Unlock Account)"]
-        REST_PARTNER["PartnerController"]
         REST_ORG["Organization Controllers<br/>(Company, Center, Branch, etc.)"]
         REST_RBAC["RBAC Controllers<br/>(Role, Permission, Group, Resource)"]
         REST_ABAC["PolicyEvaluationController & ABAC<br/>(PDP Engine & Attributes)"]
@@ -54,14 +54,14 @@ graph TD
 
     subgraph Application_Layer ["Application Layer (Use Cases & CQRS Orchestration)"]
         USE_CASES["Inbound Ports (*UseCase)<br/>*CreateUseCase, *GetUseCase<br/>*GetPageUseCase, *UpdateUseCase, *DeleteUseCase"]
-        SERVICES["Application Services (*Service)<br/>UserCreateService, RoleCreateService<br/>UserAuthoryService, PartnerAuthoryService"]
-        CACHE["Cache Layer (@Cacheable / @CacheEvict)<br/>user-authorities, partner-authorities"]
+        SERVICES["Application Services (*Service)<br/>UserCreateService, RoleCreateService<br/>UserAuthenticationService, ApiCredentialService"]
+        CACHE["Cache Layer (@Cacheable / @CacheEvict)<br/>user-authorities, user-principals"]
         APP_MAPPERS["ApplicationMappers<br/>(Command -> Domain, Domain -> Result)"]
     end
 
     subgraph Domain_Layer ["Domain Layer (Pure Core)"]
-        MODELS["Pure Domain Models<br/>User, Partner, Token, Role, Permission<br/>Company, Branch, Attribute, SystemActivity"]
-        REPO_PORTS["Outbound Ports (Domain Repositories)<br/>UserRepository, PartnerRepository<br/>RoleRepository, CompanyRepository"]
+        MODELS["Pure Domain Models<br/>User, ApiCredential, Token, Role, Permission<br/>Company, Branch, Attribute, SystemActivity"]
+        REPO_PORTS["Outbound Ports (Domain Repositories)<br/>UserRepository, ApiCredentialRepository<br/>RoleRepository, CompanyRepository"]
         DOMAIN_EVENTS["Domain Events<br/>RoleCreatedEvent, UserCreatedEvent<br/>GroupUpdatedEvent"]
     end
 
@@ -70,7 +70,7 @@ graph TD
         JPA_REPOS["Spring Data JPA (*JpaRepository)<br/>UserJpaRepository, RoleJpaRepository"]
         JPA_ENTITIES["Database ORM Entities (*Entity)<br/>UserEntity, RoleEntity, CompanyEntity"]
         ASYNC_LISTENER["SystemActivityListener<br/>(@Async on Virtual Threads)"]
-        DB[(PostgreSQL Database<br/>Flyway Versioned Schemas:<br/>auth, partner, organization, rbac, abac)]
+        DB[(PostgreSQL Database<br/>Flyway Versioned Schemas:<br/>auth, organization, rbac, abac)]
     end
 
     External_Clients --> CORR_FILTER
@@ -109,13 +109,12 @@ To preserve modular isolation and enforce clean Domain-Driven Design (DDD) bound
 
 1. **Mandatory Communication via Inbound Ports:**
    - When Module A requires data or business actions from Module B, it **MUST inject and call an Inbound Port (`application/port/in/*UseCase`)** exposed by Module B.
-   - Example: `PartnerAuthenticationService` (in `auth`) accesses partner information exclusively through `PartnerGetUseCase` (port in `partner`).
    - Example: `DashboardGetMetricsService` (in `dashboard`) aggregates counts via `UserGetUseCase.count()`, `RoleGetUseCase.count()`, `TokenUseCase.countActiveSessions()`, etc.
    - Example: `PolicyEvaluationService` (in `abac`) retrieves user context via `UserGetUseCase.findById()`.
    - Example: `UserUnlockService` (in `user`) unlocks credentials via `UserCredentialUseCase.unlockAccount()`.
 
 2. **Strict Prohibition on Cross-Module Repository Imports:**
-   - A module **MUST NEVER** import or call a `*Repository` or `*RepositoryAdapter` from another module (e.g. `auth` importing `PartnerRepository` or `UserRepository` is strictly prohibited).
+   - A module **MUST NEVER** import or call a `*Repository` or `*RepositoryAdapter` from another module (e.g. `auth` importing `RoleRepository` or `UserRepository` is strictly prohibited).
    - Repositories are internal outbound ports private to their owning module.
 
 3. **Decoupled Asynchronous Integration via Domain Events:**
@@ -135,4 +134,8 @@ The schema lifecycle is managed by Flyway across 5 distinct database schemas:
    - `auth.tokens`: Added `ip_address`, `user_agent`, `device_name`, `last_active_at`, with composite index `idx_tokens_user_revoked`.
    - `auth.password_reset_tokens`: New table managing timed password reset tokens.
 4. **`V4__add_optimistic_locking_version.sql`**:
-   - Adds `version BIGINT NOT NULL DEFAULT 0` column to all 27 tables across `auth`, `partner`, `organization`, `rbac`, and `abac` to support JPA Optimistic Locking.
+   - Adds `version BIGINT NOT NULL DEFAULT 0` column across tables to support JPA Optimistic Locking.
+5. **`V6__migrate_partner_to_user_credentials.sql`**:
+   - Drops legacy partner RBAC tables (`rbac.partner_roles`, `rbac.partner_groups`, `rbac.partner_resources`).
+   - Drops legacy partner tables (`partner.api_credentials`, `partner.partners`) and drops schema `partner`.
+   - Creates `auth.api_credentials` table associated directly with `auth.users(id)` for user API key & client credential management.

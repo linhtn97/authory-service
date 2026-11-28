@@ -5,7 +5,7 @@
 The **Authory Service** is a centralized Identity and Access Management (IAM), Role-Based Access Control (RBAC), and Organizational Structure authority for the enterprise ecosystem.
 
 Designed as a high-performance **Modular Monolith** using **Java 25** and **Spring Boot 4.1.2**, the service provides:
-- Scalable multi-tenant and B2B partner authorization.
+- Scalable user authentication with dual JWT and API Key support.
 - Hybrid access control combining granular RBAC with dynamic ABAC.
 - High-concurrency I/O leveraging Java 25 Virtual Threads.
 - Hexagonal architecture ensuring total business logic decoupling from database and transport technologies.
@@ -24,7 +24,7 @@ The RBAC engine allows organizational hierarchies and permissions to be structur
 
 ```mermaid
 graph LR
-    User([User / Partner]) -->|Assigned| Role[Role]
+    User([User Identity]) -->|Assigned| Role[Role]
     User -->|Assigned| Group[Group]
     User -->|Assigned| Resource[Resource]
     Role -->|Contains| Permission[Permission]
@@ -47,16 +47,19 @@ During authentication or gateway token verification, `UserAuthoryService` evalua
 
 ---
 
-## 3. Multi-Tenancy & Partner Architecture
+## 3. API Key & Client Credential Architecture
 
-For external partner integration and multi-tenant services, Authory Service introduces dedicated B2B partner boundaries:
+For automated service-to-server integration, background jobs, and developer integrations, Authory Service supports direct API key credentials tied to user accounts:
 
-1. **Partner Entity (`modules/partner`):** Represents an external business tenant with lifecycle controls (Active, Inactive, Suspended).
-2. **API Credentials (`modules/auth`):**
-   - Secured with an `apiKey` and `apiSecret`.
-   - Used by partner backend services for programmatic, server-to-server token issuance without user login.
-3. **Dedicated Partner Access Graphs (`modules/rbac`):**
-   - `PartnerRole`, `PartnerGroup`, `PartnerResource` allow access policies to be tailored specifically to partners without polluting internal corporate user trees.
+1. **User-Scoped API Credentials (`auth.api_credentials`):**
+   - Directly linked to `auth.users(id)` with cascade deletion.
+   - Includes `clientId`, `hashedSecret`, and high-entropy `apiKey` (e.g. `ak_<uuid>`).
+   - Supports lifecycle controls (`ACTIVE`, `REVOKED`, `expiredAt`).
+2. **Dual Header Authentication Support:**
+   - Clients can authenticate using standard `X-API-KEY: <apiKey>`.
+   - Alternatively, clients can use dual headers `Client-Id: <clientId>` and `Client-Key: <clientKey>`.
+3. **Unified Authority Aggregation:**
+   - Resolving a principal via API key or client credentials resolves the underlying user's full RBAC graph (`roles`, `groups`, `resources`, `permissions`), ensuring consistent permission checks across both interactive JWT sessions and automated API clients.
 
 ---
 
@@ -106,7 +109,7 @@ Configured via `spring.threads.virtual.enabled: true`:
 
 ### 6.2 PostgreSQL Schema Isolation
 Database entities are partitioned across clean logical schemas:
-- `auth`: User identities, credentials, tokens, partners, system activities.
+- `auth`: User identities, credentials, tokens, API credentials, system activities.
 - `rbac`: Roles, permissions, resources, groups, and junction tables.
 - `organization`: Companies, centers, branches, divisions, departments, positions.
 - `public`: Shared sequences, flyway history.

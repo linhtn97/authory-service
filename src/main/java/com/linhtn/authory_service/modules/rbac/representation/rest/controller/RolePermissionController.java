@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.linhtn.authory_service.modules.rbac.application.port.in.RolePermissionUseCase;
+import com.linhtn.security_core.annotation.RequireRole;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,6 +27,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "RBAC - Role Permissions", description = "Binding permissions to roles")
 @SecurityRequirement(name = "BearerAuth")
 @RestController
+@RequireRole({"ADMIN", "SUPER_ADMIN"})
 @RequestMapping("/api/v1/roles")
 public class RolePermissionController {
 

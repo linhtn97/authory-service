@@ -32,7 +32,7 @@ Authory Service is designed as a **Modular Monolith** using **Hexagonal Architec
   - `org.springframework.*`
   - Spring Data interfaces (`JpaRepository`, `JpaSpecificationExecutor`)
 - **Typical Components:**
-  - `domain/model/`: Pure business models (e.g. `User`, `Role`, `Partner`).
+  - `domain/model/`: Pure business models (e.g. `User`, `Role`, `ApiCredential`).
   - `domain/repository/`: Outbound repository ports (e.g. `UserRepository`, `RoleRepository`).
   - `domain/event/`: Domain lifecycle events (e.g. `UserCreatedEvent`, `RoleCreatedEvent`).
 
@@ -115,13 +115,13 @@ src/main/java/com/linhtn/authory_service/modules/<feature>/
 
 | Component | Suffix / Pattern | Example |
 | :--- | :--- | :--- |
-| **Domain Model** | Bare entity name | `User`, `Role`, `Partner` |
+| **Domain Model** | Bare entity name | `User`, `Role`, `ApiCredential` |
 | **Domain Repository Port** | `*Repository` | `UserRepository`, `RoleRepository` |
 | **Domain Event** | `*<Action>Event` | `UserCreatedEvent`, `RoleDeletedEvent` |
 | **Inbound Port (Use Case)** | `*<Action>UseCase` | `UserCreateUseCase`, `UserGetPageUseCase` |
 | **Use Case Service** | `*<Action>Service` | `UserCreateService`, `UserGetPageService` |
 | **Application Command** | `*<Action>Command` | `UserCreateCommand`, `UserUpdateCommand` |
-| **Application Result** | `*Result` | `UserResult`, `PartnerResult` |
+| **Application Result** | `*Result` | `UserResult`, `RoleResult` |
 | **JPA Entity** | `*Entity` | `UserEntity`, `RoleEntity` |
 | **Spring Data Repository** | `*JpaRepository` | `UserJpaRepository`, `RoleJpaRepository` |
 | **Entity Mapper** | `*EntityMapper` | `UserEntityMapper`, `RoleEntityMapper` |

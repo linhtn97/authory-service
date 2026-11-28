@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.linhtn.authory_service.modules.rbac.application.port.in.RoleCreateUseCase;
@@ -29,6 +28,7 @@ import com.linhtn.authory_service.modules.rbac.representation.rest.dto.response.
 import com.linhtn.authory_service.modules.rbac.representation.rest.dto.response.RoleGetResponse;
 import com.linhtn.authory_service.modules.rbac.representation.rest.dto.response.RoleUpdateResponse;
 import com.linhtn.authory_service.modules.rbac.representation.rest.mapper.RoleRestMapper;
+import com.linhtn.security_core.annotation.RequireRole;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
 import com.linhtn.sharedkernel.query.FieldOrder;
@@ -43,6 +43,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "RBAC - Roles", description = "Role catalog management and assignment")
 @SecurityRequirement(name = "BearerAuth")
 @RestController
+@RequireRole({"ADMIN", "SUPER_ADMIN"})
 @RequestMapping("/api/v1/roles")
 public class RoleController {
 
@@ -69,7 +70,7 @@ public class RoleController {
             summary = "Query roles with params",
             description = "Simple paginated list of security roles.")
     @GetMapping
-    public PagingResponse<RoleGetResponse> getPage(
+    public ResponseEntity<PagingResponse<RoleGetResponse>> getPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(required = false) String sortBy,
@@ -90,7 +91,7 @@ public class RoleController {
         }
 
         request.setQuickFilter(search);
-        return RoleRestMapper.toGetResponse(roleGetPageUseCase.execute(request));
+        return ResponseEntity.ok(RoleRestMapper.toGetResponse(roleGetPageUseCase.execute(request)));
     }
 
     @Operation(
@@ -152,9 +153,9 @@ public class RoleController {
         @ApiResponse(responseCode = "404", description = "Role not found")
     })
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(
+    public ResponseEntity<Void> delete(
             @Parameter(description = "Role UUID", required = true) @PathVariable UUID id) {
         roleDeleteUseCase.execute(id);
+        return ResponseEntity.noContent().build();
     }
 }

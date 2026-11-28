@@ -3,7 +3,6 @@ package com.linhtn.authory_service.modules.rbac.application.usecase;
 import java.util.UUID;
 
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,11 +36,7 @@ public class RoleUpdateService implements RoleUpdateUseCase {
 
     @Override
     @Transactional
-    @Caching(
-            evict = {
-                @CacheEvict(value = "user-authorities", allEntries = true),
-                @CacheEvict(value = "partner-authorities", allEntries = true)
-            })
+    @CacheEvict(value = "user-authorities", allEntries = true)
     public RoleUpdateResult execute(UUID id, RoleUpdateCommand command) {
         Role entity =
                 roleRepository

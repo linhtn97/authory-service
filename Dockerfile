@@ -1,38 +1,39 @@
 # syntax=docker/dockerfile:1.4
 
 # ==============================================================================
-# Stage 1: Build the application with Gradle & Eclipse Temurin JDK 25
+# Stage 1: Build stage with Eclipse Temurin JDK 25
 # ==============================================================================
 FROM eclipse-temurin:25-jdk AS builder
-WORKDIR /app
+WORKDIR /workspace
 
-# Optional build arguments for Nexus maven repository access during docker build
+# Build arguments for Nexus repository
 ARG NEXUS_URL=http://host.docker.internal:8081/repository/maven-public/
 ARG NEXUS_USERNAME=admin
 ARG NEXUS_PASSWORD=admin123
-ENV NEXUS_URL=${NEXUS_URL} \
-    NEXUS_USERNAME=${NEXUS_USERNAME} \
-    NEXUS_PASSWORD=${NEXUS_PASSWORD}
+ENV NEXUS_URL=${NEXUS_URL}
+ENV NEXUS_USERNAME=${NEXUS_USERNAME}
+ENV NEXUS_PASSWORD=${NEXUS_PASSWORD}
 
-# Copy gradle wrapper and build metadata first to leverage Docker layer caching
+# Install dos2unix to ensure gradlew line endings are LF inside Linux container
+RUN apt-get update && apt-get install -y --no-install-recommends dos2unix \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Gradle wrapper and configuration files first to optimize Docker layer cache
 COPY gradlew .
-COPY gradle gradle
-COPY build.gradle settings.gradle ./
+COPY gradle/ gradle/
+COPY build.gradle settings.gradle gradle.properties* ./
 
-# Make wrapper script executable
-RUN chmod +x gradlew
+# Ensure gradlew has executable permissions and unix line endings
+RUN dos2unix gradlew && chmod +x gradlew
 
-# Download dependencies (cached unless build/gradle files change)
-RUN ./gradlew dependencies --no-daemon
+# Download Gradle dependencies layer (cached unless build.gradle/settings.gradle change)
+RUN ./gradlew dependencies --no-daemon || true
 
-# Copy application source code
-COPY src src
+# Copy project source code
+COPY src/ src/
 
-# Build executable Spring Boot fat JAR, skipping tests (tests verified during CI)
+# Build Spring Boot executable fat JAR (skip tests for fast reproducible container builds)
 RUN ./gradlew bootJar -x test --no-daemon
-
-# Extract Spring Boot layers for optimized Docker layer caching and faster startup
-RUN java -Djarmode=tools -jar build/libs/*.jar extract --layers --destination build/extracted
 
 # ==============================================================================
 # Stage 2: Runtime Image with Eclipse Temurin JRE 25 (Minimal footprint)
@@ -50,11 +51,8 @@ RUN groupadd -r spring && useradd -r -g spring spring \
 
 USER spring:spring
 
-# Copy extracted application layers from builder stage
-COPY --from=builder --chown=spring:spring /app/build/extracted/dependencies/ ./
-COPY --from=builder --chown=spring:spring /app/build/extracted/spring-boot-loader/ ./
-COPY --from=builder --chown=spring:spring /app/build/extracted/snapshot-dependencies/ ./
-COPY --from=builder --chown=spring:spring /app/build/extracted/application/ ./
+# Copy built executable fat JAR from builder stage
+COPY --from=builder --chown=spring:spring /workspace/build/libs/authory-service-0.0.1-SNAPSHOT.jar /app/app.jar
 
 # Expose microservice HTTP port
 EXPOSE 8600
@@ -67,4 +65,4 @@ HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
   CMD curl -f http://localhost:8600/actuator/health || exit 1
 
 # Launch Spring Boot application
-ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/*.jar"]
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]

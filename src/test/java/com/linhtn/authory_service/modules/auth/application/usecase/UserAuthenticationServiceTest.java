@@ -20,7 +20,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.linhtn.authory_service.config.security.model.Principal;
 import com.linhtn.authory_service.config.security.model.PrincipalAuthorities;
 import com.linhtn.authory_service.config.security.model.TokenType;
 import com.linhtn.authory_service.config.security.provider.JwtProvider;
@@ -29,6 +28,7 @@ import com.linhtn.authory_service.modules.auth.application.dto.command.UserRegis
 import com.linhtn.authory_service.modules.auth.application.dto.result.AuthLoginResult;
 import com.linhtn.authory_service.modules.auth.application.dto.result.TokenResult;
 import com.linhtn.authory_service.modules.auth.application.dto.result.UserCredentialResult;
+import com.linhtn.authory_service.modules.auth.application.port.in.ApiCredentialUseCase;
 import com.linhtn.authory_service.modules.auth.application.port.in.TokenUseCase;
 import com.linhtn.authory_service.modules.auth.application.port.in.UserCredentialUseCase;
 import com.linhtn.authory_service.modules.auth.infrastructure.persistence.jpa.repository.PasswordResetTokenJpaRepository;
@@ -54,6 +54,7 @@ class UserAuthenticationServiceTest {
     @Mock private JwtProvider jwtProvider;
     @Mock private UserAuthorityUseCase userAuthoryUseCase;
     @Mock private PasswordResetTokenJpaRepository passwordResetTokenJpaRepository;
+    @Mock private ApiCredentialUseCase apiCredentialUseCase;
 
     private UserAuthenticationService service;
 
@@ -69,7 +70,8 @@ class UserAuthenticationServiceTest {
                         tokenUseCase,
                         jwtProvider,
                         userAuthoryUseCase,
-                        passwordResetTokenJpaRepository);
+                        passwordResetTokenJpaRepository,
+                        apiCredentialUseCase);
     }
 
     @Test
@@ -155,9 +157,8 @@ class UserAuthenticationServiceTest {
         when(userCredentialUseCase.validateAndTrackLogin(userId, "secret123"))
                 .thenReturn(credential);
         when(userAuthoryUseCase.getAuthorities(userId)).thenReturn(authorities);
-        when(jwtProvider.generateToken(any(Principal.class), eq(TokenType.ACCESS)))
-                .thenReturn("mockAccessToken");
-        when(jwtProvider.generateToken(any(Principal.class), eq(TokenType.REFRESH)))
+        when(jwtProvider.generateToken(any(), eq(TokenType.ACCESS))).thenReturn("mockAccessToken");
+        when(jwtProvider.generateToken(any(), eq(TokenType.REFRESH)))
                 .thenReturn("mockRefreshToken");
         Date exp = new Date(System.currentTimeMillis() + 3600000);
         when(jwtProvider.extractExpiration(any())).thenReturn(exp);
@@ -201,7 +202,7 @@ class UserAuthenticationServiceTest {
         when(userCredentialUseCase.validateAndTrackLogin(userId, "secret123"))
                 .thenReturn(credential);
         when(userAuthoryUseCase.getAuthorities(userId)).thenReturn(authorities);
-        when(jwtProvider.generateToken(any(Principal.class), eq(TokenType.MFA_PENDING)))
+        when(jwtProvider.generateToken(any(), eq(TokenType.MFA_PENDING)))
                 .thenReturn("mockMfaPendingToken");
 
         AuthLoginResult result = service.login(command);
@@ -267,10 +268,8 @@ class UserAuthenticationServiceTest {
                                 .build());
         when(userGetUseCase.execute(userId)).thenReturn(user);
         when(userAuthoryUseCase.getAuthorities(userId)).thenReturn(authorities);
-        when(jwtProvider.generateToken(any(Principal.class), eq(TokenType.ACCESS)))
-                .thenReturn("newAccessToken");
-        when(jwtProvider.generateToken(any(Principal.class), eq(TokenType.REFRESH)))
-                .thenReturn("newRefreshToken");
+        when(jwtProvider.generateToken(any(), eq(TokenType.ACCESS))).thenReturn("newAccessToken");
+        when(jwtProvider.generateToken(any(), eq(TokenType.REFRESH))).thenReturn("newRefreshToken");
         Date exp = new Date(System.currentTimeMillis() + 3600000);
         when(jwtProvider.extractExpiration(any())).thenReturn(exp);
         when(jwtProvider.extractJti("newAccessToken")).thenReturn("jti-access");

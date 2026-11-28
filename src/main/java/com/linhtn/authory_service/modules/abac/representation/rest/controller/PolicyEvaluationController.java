@@ -13,6 +13,7 @@ import com.linhtn.authory_service.modules.abac.application.dto.result.PolicyEval
 import com.linhtn.authory_service.modules.abac.application.port.in.PolicyEvaluationUseCase;
 import com.linhtn.authory_service.modules.abac.representation.rest.dto.request.PolicyEvaluationRequest;
 import com.linhtn.authory_service.modules.abac.representation.rest.dto.response.PolicyEvaluationResponse;
+import com.linhtn.security_core.annotation.RequireRole;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -25,6 +26,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
         description = "Dynamic Policy Decision Point (PDP) evaluating SpEL rules over attributes")
 @SecurityRequirement(name = "BearerAuth")
 @RestController
+@RequireRole({"ADMIN", "SUPER_ADMIN", "USER"})
 @RequestMapping("/api/v1/policies")
 public class PolicyEvaluationController {
 

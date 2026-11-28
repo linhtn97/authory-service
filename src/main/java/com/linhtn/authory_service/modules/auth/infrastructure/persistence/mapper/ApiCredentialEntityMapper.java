@@ -15,13 +15,14 @@ public class ApiCredentialEntityMapper {
         }
         return ApiCredential.builder()
                 .id(entity.getId())
+                .name(entity.getName())
                 .clientId(entity.getClientId())
                 .hashedSecret(entity.getHashedSecret())
                 .apiKey(entity.getApiKey())
                 .status(entity.getStatus())
                 .revoked(entity.getRevoked())
                 .expiredAt(entity.getExpiredAt())
-                .partnerId(entity.getPartnerId())
+                .userId(entity.getUserId())
                 .version(entity.getVersion())
                 .createdAt(entity.getCreatedAt())
                 .createdBy(entity.getCreatedBy())
@@ -36,13 +37,14 @@ public class ApiCredentialEntityMapper {
         }
         ApiCredentialEntity entity = new ApiCredentialEntity();
         entity.setId(domain.getId());
+        entity.setName(domain.getName() != null ? domain.getName() : "Default API Key");
         entity.setClientId(domain.getClientId());
         entity.setHashedSecret(domain.getHashedSecret());
         entity.setApiKey(domain.getApiKey());
         entity.setStatus(domain.getStatus());
         entity.setRevoked(domain.getRevoked());
         entity.setExpiredAt(domain.getExpiredAt());
-        entity.setPartnerId(domain.getPartnerId());
+        entity.setUserId(domain.getUserId());
         entity.setVersion(domain.getVersion());
         entity.setCreatedAt(domain.getCreatedAt());
         entity.setCreatedBy(domain.getCreatedBy());

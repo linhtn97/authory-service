@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.linhtn.authory_service.modules.rbac.application.port.in.PermissionCreateUseCase;
@@ -29,6 +28,7 @@ import com.linhtn.authory_service.modules.rbac.representation.rest.dto.response.
 import com.linhtn.authory_service.modules.rbac.representation.rest.dto.response.PermissionGetResponse;
 import com.linhtn.authory_service.modules.rbac.representation.rest.dto.response.PermissionUpdateResponse;
 import com.linhtn.authory_service.modules.rbac.representation.rest.mapper.PermissionRestMapper;
+import com.linhtn.security_core.annotation.RequireRole;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
 import com.linhtn.sharedkernel.query.FieldOrder;
@@ -43,6 +43,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "RBAC - Permissions", description = "Granular system permissions catalog")
 @SecurityRequirement(name = "BearerAuth")
 @RestController
+@RequireRole({"ADMIN", "SUPER_ADMIN"})
 @RequestMapping("/api/v1/permissions")
 public class PermissionController {
 
@@ -69,7 +70,7 @@ public class PermissionController {
             summary = "Query permissions with params",
             description = "Simple paginated list of permissions.")
     @GetMapping
-    public PagingResponse<PermissionGetResponse> getPage(
+    public ResponseEntity<PagingResponse<PermissionGetResponse>> getPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(required = false) String sortBy,
@@ -90,7 +91,8 @@ public class PermissionController {
         }
 
         request.setQuickFilter(search);
-        return PermissionRestMapper.toGetResponse(permissionGetPageUseCase.execute(request));
+        return ResponseEntity.ok(
+                PermissionRestMapper.toGetResponse(permissionGetPageUseCase.execute(request)));
     }
 
     @Operation(
@@ -150,9 +152,9 @@ public class PermissionController {
         @ApiResponse(responseCode = "404", description = "Permission not found")
     })
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(
+    public ResponseEntity<Void> delete(
             @Parameter(description = "Permission UUID", required = true) @PathVariable UUID id) {
         permissionDeleteUseCase.execute(id);
+        return ResponseEntity.noContent().build();
     }
 }

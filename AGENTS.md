@@ -2,7 +2,7 @@
 
 **Enterprise Identity, Authentication & Access Governance | Hexagonal Architecture & DDD**
 
-A high-performance IAM and fine-grained authorization microservice built with **Spring Boot 4.x** and **Java 25**, integrated with enterprise shared components from **`be-platform`**. Engineered for high throughput, stateless JWT issuance and rotation, RFC 6238 TOTP Multi-Factor Authentication (MFA), dynamic ABAC Policy Decision Point (PDP) evaluation, multi-tenant B2B partner governance, and Project Loom virtual thread concurrency.
+A high-performance IAM and fine-grained authorization microservice built with **Spring Boot 4.x** and **Java 25**, integrated with enterprise shared components from **`be-platform`**. Engineered for high throughput, stateless JWT issuance and rotation, API key and client credential authentication, RFC 6238 TOTP Multi-Factor Authentication (MFA), dynamic ABAC Policy Decision Point (PDP) evaluation, and Project Loom virtual thread concurrency.
 
 ---
 
@@ -19,11 +19,10 @@ A high-performance IAM and fine-grained authorization microservice built with **
 ## 🏗️ Core Capabilities
 
 - **Enterprise Hexagonal Architecture & DDD:** Strict isolation across Domain, Application, Infrastructure, and Representation layers.
-- **Authentication & Token Lifecycle:** Stateless JWT authentication, refresh token rotation, active device session tracking, and brute-force account lockout protection.
+- **Authentication & Token Lifecycle:** Stateless JWT authentication, refresh token rotation, user API key & client credential resolution (`X-API-KEY`, `Client-Id`/`Client-Key`), active device session tracking, and brute-force account lockout protection.
 - **RFC 6238 Multi-Factor Authentication (MFA):** Native TOTP secret provisioning, QR code generation, and multi-window time-drift verification.
 - **Fine-Grained Role-Based Access Control (RBAC):** Users, Groups, Roles, Resources, and Permissions with many-to-many associations and authority cache eviction.
 - **Attribute-Based Access Control (ABAC):** Dynamic Policy Decision Point (PDP) engine evaluating subject, resource, action, and contextual environment attributes.
-- **B2B Multi-Tenant Partner Governance:** Dedicated partner tenant isolation, hashed API keys (`Client-Id`, `Client-Key`), and isolated partner authority scopes.
 - **Organizational Structure:** Enterprise multi-level hierarchy (Company, Branch, Center, Division, Department, Position).
 - **Extreme Concurrency:** Fully tuned for **Project Loom (Virtual Threads)** on Java 25 with distributed Redis sliding-window rate limiting (`ratelimit-core`, `ratelimit-redis`).
 - **Enterprise Platform Foundation:** Standardized on `be-platform` shared modules for uniform pagination (`PagingRequest`, `PagingResponse`), error responses (`ApiErrorResponse`), i18n (`MessageResolver`), auditable entities, and auto-configured OpenAPI 3 contracts.
@@ -55,7 +54,7 @@ A high-performance IAM and fine-grained authorization microservice built with **
   - `openapi-core`: Auto-configured OpenAPI 3 / Swagger documentation and error response schemas.
   - `idempotency-core`: Mutation replay protection via `Idempotency-Key` header.
   - `ratelimit-core` & `ratelimit-redis`: Distributed sliding-window rate limiting via Redisson (`RateLimitFilter`, `@RateLimited`).
-- **Database:** PostgreSQL 16 (Schema migrations via Flyway, schemas: `public`, `auth`, `partner`, `organization`, `rbac`, `abac`)
+- **Database:** PostgreSQL 16 (Schema migrations via Flyway, schemas: `public`, `auth`, `organization`, `rbac`, `abac`)
 - **Code Standards:** Spotless (Google Java Format AOSP)
 
 ---
@@ -118,16 +117,14 @@ curl -X POST http://localhost:8600/api/v1/abac/evaluate \
   }'
 ```
 
-### 4. Register B2B Partner
+### 4. Resolve Principal via API Key or Client Credentials
 ```bash
-curl -X POST http://localhost:8600/api/v1/partners \
-  -H "Authorization: Bearer <access_token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "partner_fintech",
-    "name": "Fintech Solutions Ltd",
-    "email": "contact@fintech.example.com",
-    "phone": "+1234567890",
-    "address": "123 Financial District"
-  }'
+# Using X-API-KEY header
+curl -X GET http://localhost:8600/api/v1/auth/principal/api-key \
+  -H "X-API-KEY: ak_your_api_key_here"
+
+# Using Client-Id and Client-Key headers
+curl -X GET http://localhost:8600/api/v1/auth/principal/client \
+  -H "Client-Id: <client_id>" \
+  -H "Client-Key: <client_key>"
 ```

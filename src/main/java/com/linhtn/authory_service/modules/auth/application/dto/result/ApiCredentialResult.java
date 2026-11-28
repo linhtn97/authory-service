@@ -18,6 +18,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ApiCredentialResult {
     private UUID id;
+    private String name;
     private String clientId;
     private String hashedSecret;
     private String apiKey;
@@ -27,7 +28,7 @@ public class ApiCredentialResult {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime expiredAt;
 
-    private UUID partnerId;
+    private UUID userId;
     private LocalDateTime createdAt;
     private UUID createdBy;
     private LocalDateTime updatedAt;

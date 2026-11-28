@@ -42,4 +42,17 @@ public class AuthRestMapper {
                 .mfaToken(result.getMfaToken())
                 .build();
     }
+
+    public static com.linhtn.authory_service.modules.auth.representation.rest.dto.response
+                    .MfaSetupResponse
+            toMfaSetupResponse(
+                    com.linhtn.authory_service.modules.auth.application.dto.result.MfaSetupResult
+                            result) {
+        if (result == null) return null;
+        return com.linhtn.authory_service.modules.auth.representation.rest.dto.response
+                .MfaSetupResponse.builder()
+                .secretKey(result.getSecretKey())
+                .qrCodeUri(result.getQrCodeUri())
+                .build();
+    }
 }

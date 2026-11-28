@@ -17,6 +17,7 @@ import com.linhtn.authory_service.config.security.util.CurrentPrincipalUtil;
 import com.linhtn.authory_service.modules.auth.application.dto.result.TokenResult;
 import com.linhtn.authory_service.modules.auth.application.port.in.TokenUseCase;
 import com.linhtn.authory_service.modules.auth.representation.rest.dto.response.SessionGetResponse;
+import com.linhtn.security_core.annotation.RequireRole;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,6 +31,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
         description = "Device tracking, active refresh tokens, and remote session termination")
 @SecurityRequirement(name = "BearerAuth")
 @RestController
+@RequireRole({"ADMIN", "SUPER_ADMIN", "USER"})
 @RequestMapping("/api/v1/auth/sessions")
 public class SessionController {
 

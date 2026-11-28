@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.linhtn.authory_service.modules.organization.application.port.in.DepartmentCreateUseCase;
@@ -29,6 +28,7 @@ import com.linhtn.authory_service.modules.organization.representation.rest.dto.r
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.DepartmentGetResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.DepartmentUpdateResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.mapper.DepartmentRestMapper;
+import com.linhtn.security_core.annotation.RequireRole;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
 import com.linhtn.sharedkernel.query.FieldOrder;
@@ -43,6 +43,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Organization - Departments", description = "Department organizational nodes")
 @SecurityRequirement(name = "BearerAuth")
 @RestController
+@RequireRole({"ADMIN", "SUPER_ADMIN"})
 @RequestMapping("/api/v1/departments")
 public class DepartmentController {
 
@@ -69,7 +70,7 @@ public class DepartmentController {
             summary = "Query departments with params",
             description = "Simple paginated list of departments.")
     @GetMapping
-    public PagingResponse<DepartmentGetResponse> getPage(
+    public ResponseEntity<PagingResponse<DepartmentGetResponse>> getPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(required = false) String sortBy,
@@ -90,7 +91,8 @@ public class DepartmentController {
         }
 
         request.setQuickFilter(search);
-        return DepartmentRestMapper.toGetResponse(departmentGetPageUseCase.execute(request));
+        return ResponseEntity.ok(
+                DepartmentRestMapper.toGetResponse(departmentGetPageUseCase.execute(request)));
     }
 
     @Operation(
@@ -150,9 +152,9 @@ public class DepartmentController {
         @ApiResponse(responseCode = "404", description = "Department not found")
     })
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(
+    public ResponseEntity<Void> delete(
             @Parameter(description = "Department UUID", required = true) @PathVariable UUID id) {
         departmentDeleteUseCase.execute(id);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -134,8 +134,7 @@ The unit test suite consists of **30 test classes** and **69 unit test cases** e
 
 | Test Class | Target Component | Coverage Focus |
 | :--- | :--- | :--- |
-| `UserAuthenticationServiceTest` | `UserAuthenticationService` | Register via `UserCreateUseCase`, password hashing, standard login via `UserGetUseCase`, MFA login, refresh token, logout, account lockout checks |
-| `PartnerAuthenticationServiceTest` | `PartnerAuthenticationService` | Principal retrieval and API key issuing exclusively via `PartnerGetUseCase` and `PartnerAuthoryUseCase` ports |
+| `UserAuthenticationServiceTest` | `UserAuthenticationService` | Register via `UserCreateUseCase`, password hashing, standard login via `UserGetUseCase`, MFA login, refresh token, logout, account lockout checks, API key and client credential resolution |
 | `DashboardGetMetricsServiceTest` | `DashboardGetMetricsService` | Aggregates system metrics exclusively across module ports (`UserGetUseCase`, `RoleGetUseCase`, `TokenUseCase`, etc.) |
 | `UserCredentialServiceTest` | `UserCredentialService` | Credential validation, 5-strike account lockout defense, unlock, MFA enable/disable, password updates |
 | `TokenServiceTest` | `TokenService` | Token generation, JTI validation, revocation, and session cleanup |
@@ -155,8 +154,6 @@ The unit test suite consists of **30 test classes** and **69 unit test cases** e
 | `AttributeGetServiceTest` | `AttributeGetService` | ABAC attribute retrieval |
 | `CompanyCreateServiceTest` | `CompanyCreateService` | Organization company creation |
 | `CompanyGetServiceTest` | `CompanyGetService` | Organization company retrieval |
-| `PartnerCreateServiceTest` | `PartnerCreateService` | B2B partner registration |
-| `PartnerGetServiceTest` | `PartnerGetService` | B2B partner retrieval |
 | `SystemActivityGetRecentServiceTest` | `SystemActivityGetRecentService` | Recent activity querying and mapping |
 | `JwtAuthorizationFilterTest` | `JwtAuthorizationFilter` | Stateless JWT parsing, Bearer token extraction, and SecurityContext population |
 | `TotpUtilTest` | `TotpUtil` | RFC 6238 TOTP key generation and 6-digit code verification |

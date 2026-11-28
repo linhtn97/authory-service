@@ -16,13 +16,14 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ApiCredential {
     private UUID id;
+    private String name;
     private String clientId;
     private String hashedSecret;
     private String apiKey;
     private String status;
     @Builder.Default private Boolean revoked = false;
     private LocalDateTime expiredAt;
-    private UUID partnerId;
+    private UUID userId;
     private Long version;
     private LocalDateTime createdAt;
     private UUID createdBy;

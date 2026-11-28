@@ -17,8 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.linhtn.authory_service.config.security.config.SecurityProperties;
-import com.linhtn.authory_service.config.security.model.Principal;
 import com.linhtn.authory_service.config.security.model.TokenType;
+import com.linhtn.security_core.model.AuthenticatedUser;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -68,28 +68,36 @@ public class JwtProvider {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    private String buildToken(Principal principal, long expiration) {
+    private String buildToken(AuthenticatedUser user, long expiration) {
         Instant now = Instant.now();
         var builder =
                 Jwts.builder()
-                        .subject(principal.id().toString())
+                        .subject(user.getUserId())
                         .issuedAt(Date.from(now))
                         .expiration(Date.from(now.plusMillis(expiration)))
                         .claim("jti", UUID.randomUUID().toString())
-                        .claim("preferred_username", principal.username())
-                        .claim("email", principal.email());
+                        .claim("preferred_username", user.getUsername())
+                        .claim("email", user.getEmail());
 
-        if (principal.firstName() != null && !principal.firstName().isBlank()) {
-            builder.claim("given_name", principal.firstName());
-        }
-        if (principal.lastName() != null && !principal.lastName().isBlank()) {
-            builder.claim("family_name", principal.lastName());
-        }
+        user.getAttribute("firstName", String.class)
+                .filter(name -> !name.isBlank())
+                .ifPresent(name -> builder.claim("given_name", name));
 
-        if (principal.authorities() != null
-                && principal.authorities().roles() != null
-                && !principal.authorities().roles().isEmpty()) {
-            builder.claim("roles", principal.authorities().roles());
+        user.getAttribute("lastName", String.class)
+                .filter(name -> !name.isBlank())
+                .ifPresent(name -> builder.claim("family_name", name));
+
+        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+            builder.claim("roles", user.getRoles());
+        }
+        if (user.getGroups() != null && !user.getGroups().isEmpty()) {
+            builder.claim("groups", user.getGroups());
+        }
+        if (user.getResources() != null && !user.getResources().isEmpty()) {
+            builder.claim("resources", user.getResources());
+        }
+        if (user.getPermissions() != null && !user.getPermissions().isEmpty()) {
+            builder.claim("permissions", user.getPermissions());
         }
 
         if (rsaKeyManager != null && rsaKeyManager.isRsaEnabled()) {
@@ -126,7 +134,7 @@ public class JwtProvider {
         return extractExpiration(token).before(new Date());
     }
 
-    public String generateToken(Principal principal, TokenType tokenType) {
+    public String generateToken(AuthenticatedUser user, TokenType tokenType) {
         long expiration;
         if (tokenType.equals(TokenType.MFA_PENDING)) {
             expiration = 300000L; // 5 minutes
@@ -135,7 +143,7 @@ public class JwtProvider {
         } else {
             expiration = refreshExpiration;
         }
-        return buildToken(principal, expiration);
+        return buildToken(user, expiration);
     }
 
     public UUID extractUserId(String token) {

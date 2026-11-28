@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.linhtn.authory_service.modules.rbac.application.port.in.UserRoleUseCase;
 import com.linhtn.authory_service.modules.rbac.representation.rest.dto.response.RoleGetResponse;
 import com.linhtn.authory_service.modules.rbac.representation.rest.mapper.RoleRestMapper;
+import com.linhtn.security_core.annotation.RequireRole;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,6 +28,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "RBAC - User Roles", description = "Assigning roles to users")
 @SecurityRequirement(name = "BearerAuth")
 @RestController
+@RequireRole({"ADMIN", "SUPER_ADMIN"})
 @RequestMapping("/api/v1/users")
 public class UserRoleController {
 

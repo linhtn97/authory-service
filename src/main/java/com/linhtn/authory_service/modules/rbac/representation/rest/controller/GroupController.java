@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.linhtn.authory_service.modules.rbac.application.port.in.GroupCreateUseCase;
@@ -29,6 +28,7 @@ import com.linhtn.authory_service.modules.rbac.representation.rest.dto.response.
 import com.linhtn.authory_service.modules.rbac.representation.rest.dto.response.GroupGetResponse;
 import com.linhtn.authory_service.modules.rbac.representation.rest.dto.response.GroupUpdateResponse;
 import com.linhtn.authory_service.modules.rbac.representation.rest.mapper.GroupRestMapper;
+import com.linhtn.security_core.annotation.RequireRole;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
 import com.linhtn.sharedkernel.query.FieldOrder;
@@ -43,6 +43,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "RBAC - Groups", description = "User group hierarchy and administration")
 @SecurityRequirement(name = "BearerAuth")
 @RestController
+@RequireRole({"ADMIN", "SUPER_ADMIN"})
 @RequestMapping("/api/v1/groups")
 public class GroupController {
 
@@ -69,7 +70,7 @@ public class GroupController {
             summary = "Query groups with params",
             description = "Simple paginated list of user groups.")
     @GetMapping
-    public PagingResponse<GroupGetResponse> getPage(
+    public ResponseEntity<PagingResponse<GroupGetResponse>> getPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(required = false) String sortBy,
@@ -90,7 +91,8 @@ public class GroupController {
         }
 
         request.setQuickFilter(search);
-        return GroupRestMapper.toGetResponse(groupGetPageUseCase.execute(request));
+        return ResponseEntity.ok(
+                GroupRestMapper.toGetResponse(groupGetPageUseCase.execute(request)));
     }
 
     @Operation(
@@ -147,9 +149,9 @@ public class GroupController {
         @ApiResponse(responseCode = "404", description = "Group not found")
     })
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(
+    public ResponseEntity<Void> delete(
             @Parameter(description = "Group UUID", required = true) @PathVariable UUID id) {
         groupDeleteUseCase.execute(id);
+        return ResponseEntity.noContent().build();
     }
 }

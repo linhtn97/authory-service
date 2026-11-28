@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.linhtn.authory_service.modules.organization.application.port.in.DivisionCreateUseCase;
@@ -29,6 +28,7 @@ import com.linhtn.authory_service.modules.organization.representation.rest.dto.r
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.DivisionGetResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.DivisionUpdateResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.mapper.DivisionRestMapper;
+import com.linhtn.security_core.annotation.RequireRole;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
 import com.linhtn.sharedkernel.query.FieldOrder;
@@ -43,6 +43,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Organization - Divisions", description = "Division organizational nodes")
 @SecurityRequirement(name = "BearerAuth")
 @RestController
+@RequireRole({"ADMIN", "SUPER_ADMIN"})
 @RequestMapping("/api/v1/divisions")
 public class DivisionController {
 
@@ -69,7 +70,7 @@ public class DivisionController {
             summary = "Query divisions with params",
             description = "Simple paginated list of divisions.")
     @GetMapping
-    public PagingResponse<DivisionGetResponse> getPage(
+    public ResponseEntity<PagingResponse<DivisionGetResponse>> getPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(required = false) String sortBy,
@@ -90,7 +91,8 @@ public class DivisionController {
         }
 
         request.setQuickFilter(search);
-        return DivisionRestMapper.toGetResponse(divisionGetPageUseCase.execute(request));
+        return ResponseEntity.ok(
+                DivisionRestMapper.toGetResponse(divisionGetPageUseCase.execute(request)));
     }
 
     @Operation(
@@ -147,9 +149,9 @@ public class DivisionController {
         @ApiResponse(responseCode = "404", description = "Division not found")
     })
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(
+    public ResponseEntity<Void> delete(
             @Parameter(description = "Division UUID", required = true) @PathVariable UUID id) {
         divisionDeleteUseCase.execute(id);
+        return ResponseEntity.noContent().build();
     }
 }

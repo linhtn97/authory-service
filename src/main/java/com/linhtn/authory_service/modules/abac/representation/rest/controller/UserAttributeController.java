@@ -30,6 +30,7 @@ import com.linhtn.authory_service.modules.abac.representation.rest.dto.response.
 import com.linhtn.authory_service.modules.abac.representation.rest.dto.response.UserAttributeGetResponse;
 import com.linhtn.authory_service.modules.abac.representation.rest.dto.response.UserAttributeUpdateResponse;
 import com.linhtn.authory_service.modules.abac.representation.rest.mapper.UserAttributeRestMapper;
+import com.linhtn.security_core.annotation.RequireRole;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
 import com.linhtn.sharedkernel.query.FieldOrder;
@@ -46,6 +47,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
         description = "Assigning and querying custom attribute values on users")
 @SecurityRequirement(name = "BearerAuth")
 @RestController
+@RequireRole({"ADMIN", "SUPER_ADMIN"})
 @RequestMapping("/api/v1/users/attributes")
 public class UserAttributeController {
 
@@ -75,7 +77,7 @@ public class UserAttributeController {
             summary = "Query user attributes with params",
             description = "Simple paginated list of user attribute bindings.")
     @GetMapping
-    public PagingResponse<UserAttributeGetResponse> getPage(
+    public ResponseEntity<PagingResponse<UserAttributeGetResponse>> getPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(required = false) String sortBy,
@@ -96,7 +98,9 @@ public class UserAttributeController {
         }
 
         request.setQuickFilter(search);
-        return UserAttributeRestMapper.toGetResponse(userAttributeGetPageUseCase.execute(request));
+        return ResponseEntity.ok(
+                UserAttributeRestMapper.toGetResponse(
+                        userAttributeGetPageUseCase.execute(request)));
     }
 
     @Operation(
@@ -162,10 +166,10 @@ public class UserAttributeController {
         @ApiResponse(responseCode = "404", description = "Binding not found")
     })
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(
+    public ResponseEntity<Void> delete(
             @Parameter(description = "Binding UUID", required = true) @PathVariable UUID id) {
         userAttributeDeleteUseCase.execute(id);
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(

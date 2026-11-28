@@ -143,12 +143,79 @@ public class GlobalApiExceptionHandler {
                 ex);
 
         ApiErrorResponse response = new ApiErrorResponse();
+        response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setErrorCode(HttpStatus.UNAUTHORIZED.name());
         response.setErrorMessage(messageResolver.getMessage("error.auth.unauthorized"));
         response.setTimestamp(LocalDateTime.now());
         response.setPath(request.getDescription(false).replace("uri=", ""));
 
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
+    // Handle Platform Security AuthenticationRequiredException
+    @ExceptionHandler(com.linhtn.security_core.exception.AuthenticationRequiredException.class)
+    public ResponseEntity<ApiErrorResponse> handleAuthenticationRequiredException(
+            com.linhtn.security_core.exception.AuthenticationRequiredException ex,
+            WebRequest request) {
+
+        String path = request.getDescription(false).replace("uri=", "");
+        logger.warn(
+                "AuthenticationRequiredException: Message: {}, Path: {}", ex.getMessage(), path);
+
+        ApiErrorResponse response = new ApiErrorResponse();
+        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        response.setErrorCode(ex.getErrorCode());
+        response.setErrorMessage(messageResolver.getMessage("error.auth.unauthorized"));
+        response.setErrorDetails(ex.getMessage());
+        response.setTimestamp(LocalDateTime.now());
+        response.setPath(path);
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+
+    // Handle Platform Security AccessDeniedException
+    @ExceptionHandler(com.linhtn.security_core.exception.AccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleAccessDeniedException(
+            com.linhtn.security_core.exception.AccessDeniedException ex, WebRequest request) {
+
+        String path = request.getDescription(false).replace("uri=", "");
+        logger.warn(
+                "AccessDeniedException: Message: {}, MissingAuthorities: {}, Path: {}",
+                ex.getMessage(),
+                ex.getMissingAuthorities(),
+                path);
+
+        ApiErrorResponse response = new ApiErrorResponse();
+        response.setStatus(HttpStatus.FORBIDDEN.value());
+        response.setErrorCode(ex.getErrorCode());
+        response.setErrorMessage(messageResolver.getMessage("error.auth.access_denied"));
+        response.setErrorDetails(
+                ex.getMissingAuthorities().isEmpty()
+                        ? ex.getMessage()
+                        : ex.getMissingAuthorities());
+        response.setTimestamp(LocalDateTime.now());
+        response.setPath(path);
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+    // Handle Spring Security AccessDeniedException
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleSpringAccessDeniedException(
+            org.springframework.security.access.AccessDeniedException ex, WebRequest request) {
+
+        String path = request.getDescription(false).replace("uri=", "");
+        logger.warn("Spring AccessDeniedException: Message: {}, Path: {}", ex.getMessage(), path);
+
+        ApiErrorResponse response = new ApiErrorResponse();
+        response.setStatus(HttpStatus.FORBIDDEN.value());
+        response.setErrorCode("ACCESS_DENIED");
+        response.setErrorMessage(messageResolver.getMessage("error.auth.access_denied"));
+        response.setErrorDetails(ex.getMessage());
+        response.setTimestamp(LocalDateTime.now());
+        response.setPath(path);
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
     // Handle Optimistic Locking & Concurrency Failures

@@ -15,16 +15,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.linhtn.authory_service.config.security.model.Principal;
 import com.linhtn.authory_service.config.security.model.TokenType;
 import com.linhtn.authory_service.config.security.provider.JwtProvider;
 import com.linhtn.authory_service.config.security.util.TotpUtil;
 import com.linhtn.authory_service.modules.auth.application.dto.command.UserLoginCommand;
 import com.linhtn.authory_service.modules.auth.application.dto.command.UserRegisterCommand;
+import com.linhtn.authory_service.modules.auth.application.dto.result.ApiCredentialResult;
 import com.linhtn.authory_service.modules.auth.application.dto.result.AuthLoginResult;
 import com.linhtn.authory_service.modules.auth.application.dto.result.MfaSetupResult;
 import com.linhtn.authory_service.modules.auth.application.dto.result.TokenResult;
 import com.linhtn.authory_service.modules.auth.application.dto.result.UserCredentialResult;
+import com.linhtn.authory_service.modules.auth.application.port.in.ApiCredentialUseCase;
 import com.linhtn.authory_service.modules.auth.application.port.in.TokenBlacklistUseCase;
 import com.linhtn.authory_service.modules.auth.application.port.in.TokenUseCase;
 import com.linhtn.authory_service.modules.auth.application.port.in.UserAuthenticationUseCase;
@@ -39,6 +40,7 @@ import com.linhtn.authory_service.modules.user.application.dto.result.UserCreate
 import com.linhtn.authory_service.modules.user.application.dto.result.UserGetResult;
 import com.linhtn.authory_service.modules.user.application.port.in.UserCreateUseCase;
 import com.linhtn.authory_service.modules.user.application.port.in.UserGetUseCase;
+import com.linhtn.security_core.model.AuthenticatedUser;
 import com.linhtn.web.i18n.MessageResolver;
 
 @Service
@@ -54,6 +56,7 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
     private final UserAuthorityUseCase userAuthoryUseCase;
     private final PasswordResetTokenJpaRepository passwordResetTokenJpaRepository;
     private final TokenBlacklistUseCase tokenBlacklistUseCase;
+    private final ApiCredentialUseCase apiCredentialUseCase;
 
     public UserAuthenticationService(
             MessageResolver i18nHelper,
@@ -64,7 +67,8 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
             TokenUseCase tokenUseCase,
             JwtProvider jwtProvider,
             UserAuthorityUseCase userAuthoryUseCase,
-            PasswordResetTokenJpaRepository passwordResetTokenJpaRepository) {
+            PasswordResetTokenJpaRepository passwordResetTokenJpaRepository,
+            ApiCredentialUseCase apiCredentialUseCase) {
         this(
                 i18nHelper,
                 passwordEncoder,
@@ -75,7 +79,8 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
                 jwtProvider,
                 userAuthoryUseCase,
                 passwordResetTokenJpaRepository,
-                new TokenBlacklistService(null));
+                new TokenBlacklistService(null),
+                apiCredentialUseCase);
     }
 
     @Autowired
@@ -89,7 +94,8 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
             JwtProvider jwtProvider,
             UserAuthorityUseCase userAuthoryUseCase,
             PasswordResetTokenJpaRepository passwordResetTokenJpaRepository,
-            TokenBlacklistUseCase tokenBlacklistUseCase) {
+            TokenBlacklistUseCase tokenBlacklistUseCase,
+            ApiCredentialUseCase apiCredentialUseCase) {
         this.i18nHelper = i18nHelper;
         this.passwordEncoder = passwordEncoder;
         this.userGetUseCase = userGetUseCase;
@@ -100,6 +106,7 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
         this.userAuthoryUseCase = userAuthoryUseCase;
         this.passwordResetTokenJpaRepository = passwordResetTokenJpaRepository;
         this.tokenBlacklistUseCase = tokenBlacklistUseCase;
+        this.apiCredentialUseCase = apiCredentialUseCase;
     }
 
     @Override
@@ -136,32 +143,18 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
 
         if (Boolean.TRUE.equals(credential.getMfaEnabled())) {
             var authorities = userAuthoryUseCase.getAuthorities(existUser.getId());
-            var principal =
-                    new Principal(
-                            existUser.getId(),
-                            existUser.getUsername(),
-                            existUser.getEmail(),
-                            existUser.getFirstName(),
-                            existUser.getLastName(),
-                            authorities);
+            var user = buildAuthenticatedUser(existUser, authorities);
 
-            var mfaToken = jwtProvider.generateToken(principal, TokenType.MFA_PENDING);
+            var mfaToken = jwtProvider.generateToken(user, TokenType.MFA_PENDING);
             return AuthLoginResult.builder().mfaRequired(true).mfaToken(mfaToken).build();
         }
 
         tokenUseCase.revokeAllByUserId(existUser.getId());
 
         var authorities = userAuthoryUseCase.getAuthorities(existUser.getId());
-        var principal =
-                new Principal(
-                        existUser.getId(),
-                        existUser.getUsername(),
-                        existUser.getEmail(),
-                        existUser.getFirstName(),
-                        existUser.getLastName(),
-                        authorities);
+        var user = buildAuthenticatedUser(existUser, authorities);
 
-        return getAuth(principal, command.getIpAddress(), command.getUserAgent());
+        return getAuth(user, command.getIpAddress(), command.getUserAgent());
     }
 
     @Override
@@ -199,20 +192,13 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
         tokenUseCase.revokeAllByUserId(existUser.getId());
 
         var authorities = userAuthoryUseCase.getAuthorities(existUser.getId());
-        var principal =
-                new Principal(
-                        existUser.getId(),
-                        existUser.getUsername(),
-                        existUser.getEmail(),
-                        existUser.getFirstName(),
-                        existUser.getLastName(),
-                        authorities);
+        var user = buildAuthenticatedUser(existUser, authorities);
 
-        return getAuth(principal, existToken.getIpAddress(), existToken.getUserAgent());
+        return getAuth(user, existToken.getIpAddress(), existToken.getUserAgent());
     }
 
     @Override
-    public Principal getPrincipal(String token) {
+    public AuthenticatedUser getPrincipal(String token) {
         if (!jwtProvider.validateToken(token)) {
             throw new IllegalArgumentException("Invalid or expired token");
         }
@@ -224,21 +210,77 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
         String username = jwtProvider.extractUsername(token);
         String email = jwtProvider.extractEmail(token);
         var authorities = userAuthoryUseCase.getAuthorities(userId);
-        return new Principal(userId, username, email, null, null, authorities);
+        return AuthenticatedUser.builder()
+                .userId(userId != null ? userId.toString() : username)
+                .username(username)
+                .email(email)
+                .roles(authorities != null ? authorities.roles() : java.util.Collections.emptySet())
+                .groups(
+                        authorities != null
+                                ? authorities.groups()
+                                : java.util.Collections.emptySet())
+                .resources(
+                        authorities != null
+                                ? authorities.resources()
+                                : java.util.Collections.emptySet())
+                .permissions(
+                        authorities != null
+                                ? authorities.permissions()
+                                : java.util.Collections.emptySet())
+                .build();
     }
 
     @Override
     @Cacheable(value = "user-principals", key = "#userId")
-    public Principal getPrincipal(UUID userId) {
+    public AuthenticatedUser getPrincipal(UUID userId) {
         UserGetResult existUser = userGetUseCase.execute(userId);
         var authorities = userAuthoryUseCase.getAuthorities(existUser.getId());
-        return new Principal(
-                existUser.getId(),
-                existUser.getUsername(),
-                existUser.getEmail(),
-                existUser.getFirstName(),
-                existUser.getLastName(),
-                authorities);
+        return buildAuthenticatedUser(existUser, authorities);
+    }
+
+    @Override
+    @Cacheable(value = "user-principals", key = "'apikey:' + #apiKey")
+    public AuthenticatedUser getPrincipalByApiKey(String apiKey) {
+        ApiCredentialResult credential = apiCredentialUseCase.getByApiKey(apiKey);
+        if (Boolean.TRUE.equals(credential.getRevoked())) {
+            throw new IllegalArgumentException("API Key has been revoked");
+        }
+        if (credential.getExpiredAt() != null
+                && credential.getExpiredAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("API Key has expired");
+        }
+        return getPrincipal(credential.getUserId());
+    }
+
+    @Override
+    @Cacheable(value = "user-principals", key = "'client:' + #clientId + ':' + #clientKey")
+    public AuthenticatedUser getPrincipalByClientCredentials(String clientId, String clientKey) {
+        ApiCredentialResult credential =
+                apiCredentialUseCase.getByClientIdAndHashedSecret(clientId, clientKey);
+        if (Boolean.TRUE.equals(credential.getRevoked())) {
+            throw new IllegalArgumentException("API Key has been revoked");
+        }
+        if (credential.getExpiredAt() != null
+                && credential.getExpiredAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("API Key has expired");
+        }
+        return getPrincipal(credential.getUserId());
+    }
+
+    @Override
+    @Transactional
+    public ApiCredentialResult issueApiKey(UUID userId) {
+        UserGetResult existUser = userGetUseCase.execute(userId);
+        return apiCredentialUseCase.create(
+                ApiCredentialResult.builder()
+                        .userId(existUser.getId())
+                        .clientId(UUID.randomUUID().toString())
+                        .hashedSecret(UUID.randomUUID().toString())
+                        .apiKey("ak_" + UUID.randomUUID().toString().replace("-", ""))
+                        .status("ACTIVE")
+                        .revoked(false)
+                        .expiredAt(LocalDateTime.now().plusYears(1))
+                        .build());
     }
 
     @Override
@@ -311,16 +353,9 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
         UserGetResult existUser = userGetUseCase.execute(userId);
 
         var authorities = userAuthoryUseCase.getAuthorities(existUser.getId());
-        var principal =
-                new Principal(
-                        existUser.getId(),
-                        existUser.getUsername(),
-                        existUser.getEmail(),
-                        existUser.getFirstName(),
-                        existUser.getLastName(),
-                        authorities);
+        var user = buildAuthenticatedUser(existUser, authorities);
 
-        return getAuth(principal, ipAddress, userAgent);
+        return getAuth(user, ipAddress, userAgent);
     }
 
     @Override
@@ -402,12 +437,12 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
         }
     }
 
-    private AuthLoginResult getAuth(Principal principal, String ipAddress, String userAgent) {
-        var accessToken = jwtProvider.generateToken(principal, TokenType.ACCESS);
-        saveUserToken(principal, accessToken, TokenType.ACCESS, ipAddress, userAgent);
+    private AuthLoginResult getAuth(AuthenticatedUser user, String ipAddress, String userAgent) {
+        var accessToken = jwtProvider.generateToken(user, TokenType.ACCESS);
+        saveUserToken(user, accessToken, TokenType.ACCESS, ipAddress, userAgent);
 
-        var refreshToken = jwtProvider.generateToken(principal, TokenType.REFRESH);
-        saveUserToken(principal, refreshToken, TokenType.REFRESH, ipAddress, userAgent);
+        var refreshToken = jwtProvider.generateToken(user, TokenType.REFRESH);
+        saveUserToken(user, refreshToken, TokenType.REFRESH, ipAddress, userAgent);
 
         return AuthLoginResult.builder()
                 .accessToken(accessToken)
@@ -419,7 +454,7 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
     }
 
     private void saveUserToken(
-            Principal principal,
+            AuthenticatedUser user,
             String principalToken,
             TokenType tokenType,
             String ipAddress,
@@ -428,7 +463,7 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
                 TokenResult.builder()
                         .jti(jwtProvider.extractJti(principalToken))
                         .type(tokenType.name())
-                        .userId(principal.id())
+                        .userId(UUID.fromString(user.getUserId()))
                         .revoked(Boolean.FALSE)
                         .ipAddress(ipAddress)
                         .userAgent(userAgent)
@@ -439,5 +474,30 @@ public class UserAuthenticationService implements UserAuthenticationUseCase {
                                         ZoneId.systemDefault()))
                         .build();
         tokenUseCase.create(token);
+    }
+
+    private AuthenticatedUser buildAuthenticatedUser(
+            UserGetResult user,
+            com.linhtn.authory_service.config.security.model.PrincipalAuthorities authorities) {
+        var builder =
+                AuthenticatedUser.builder()
+                        .userId(user.getId().toString())
+                        .username(user.getUsername())
+                        .email(user.getEmail());
+
+        if (user.getFirstName() != null) {
+            builder.attribute("firstName", user.getFirstName());
+        }
+        if (user.getLastName() != null) {
+            builder.attribute("lastName", user.getLastName());
+        }
+
+        if (authorities != null) {
+            builder.roles(authorities.roles())
+                    .groups(authorities.groups())
+                    .resources(authorities.resources())
+                    .permissions(authorities.permissions());
+        }
+        return builder.build();
     }
 }

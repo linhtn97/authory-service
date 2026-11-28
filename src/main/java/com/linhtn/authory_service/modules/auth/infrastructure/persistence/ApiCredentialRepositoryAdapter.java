@@ -96,4 +96,32 @@ public class ApiCredentialRepositoryAdapter implements ApiCredentialRepository {
                 .findByClientIdAndHashedSecret(clientId, hashedSecret)
                 .map(ApiCredentialEntityMapper::toDomain);
     }
+
+    @Override
+    public Optional<ApiCredential> findByApiKey(String apiKey) {
+        return apiCredentialJpaRepository
+                .findByApiKey(apiKey)
+                .map(ApiCredentialEntityMapper::toDomain);
+    }
+
+    @Override
+    public Optional<ApiCredential> findByUserId(UUID userId) {
+        return apiCredentialJpaRepository
+                .findByUserId(userId)
+                .map(ApiCredentialEntityMapper::toDomain);
+    }
+
+    @Override
+    public List<ApiCredential> findAllByUserId(UUID userId) {
+        return apiCredentialJpaRepository.findAllByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(ApiCredentialEntityMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public Optional<ApiCredential> findByIdAndUserId(UUID id, UUID userId) {
+        return apiCredentialJpaRepository
+                .findByIdAndUserId(id, userId)
+                .map(ApiCredentialEntityMapper::toDomain);
+    }
 }

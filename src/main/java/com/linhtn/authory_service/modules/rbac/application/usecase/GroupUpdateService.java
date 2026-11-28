@@ -3,7 +3,6 @@ package com.linhtn.authory_service.modules.rbac.application.usecase;
 import java.util.UUID;
 
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,11 +38,7 @@ public class GroupUpdateService implements GroupUpdateUseCase {
 
     @Override
     @Transactional
-    @Caching(
-            evict = {
-                @CacheEvict(value = "user-authorities", allEntries = true),
-                @CacheEvict(value = "partner-authorities", allEntries = true)
-            })
+    @CacheEvict(value = "user-authorities", allEntries = true)
     public GroupUpdateResult execute(UUID id, GroupUpdateCommand command) {
         log.info("Updating Group with ID: {}", id);
         Group existing =

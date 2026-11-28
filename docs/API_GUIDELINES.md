@@ -14,7 +14,7 @@ Conforms to RFC 9110 (HTTP Semantics), RFC 7517 (JWKS), RFC 6238 (TOTP MFA), and
 - **JWKS Discovery Endpoints:** `/api/v1/auth/jwks.json` and `/.well-known/jwks.json`
 - **Payload Encoding:** UTF-8 JSON (`application/json`)
 - **Authentication Scheme:** Bearer Token via HTTP `Authorization` header (`Authorization: Bearer <accessToken>`)
-- **Partner B2B Authentication:** `Client-Id` and `Client-Key` headers
+- **API Key & Client Authentication:** `X-API-KEY: <apiKey>` or `Client-Id` and `Client-Key` headers
 - **Distributed Tracing Header:** `X-Correlation-Id` (UUID propagated across request/response and SLF4J MDC)
 - **Rate Limiting:** Distributed sliding-window rate limiting via Redis (`platform.ratelimit` / `ratelimit-redis` / Redisson) on sensitive authentication endpoints (`/api/v1/auth/login`, `/api/v1/auth/register`, `/api/v1/auth/mfa/verify`, `/api/v1/auth/forgot-password`, `/api/v1/auth/reset-password`). Returns `HTTP 429 Too Many Requests` with RFC-standard rate limit response headers (`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `Retry-After`).
 
@@ -62,7 +62,7 @@ Authory Service generates stateless RS256 (asymmetric) or HS256 tokens fully com
 | `roles` | Enterprise RBAC | Assigned role codes |
 | `permissions` | Enterprise RBAC | Flat list of granted permission strings |
 | `groups` | Enterprise RBAC | Group membership codes |
-| `type` | Enterprise Multi-Tenant | Caller principal classification: `USER` or `PARTNER` |
+| `type` | Enterprise IAM | Caller principal classification: `USER` |
 
 ---
 
@@ -196,9 +196,10 @@ X-Correlation-Id: e4f9812b-3b8f-49b8-a612-9c1628d052d1
 | `POST` | `/api/v1/auth/reset-password` | `ResetPasswordRequest` | `Void` | Reset password using reset token | Public |
 | `GET` | `/api/v1/auth/logout` | - | `Void` | Blacklist current JWT access token via Redis TTL and revoke refresh session | Authenticated |
 | `GET` | `/api/v1/auth/refresh-token` | Header `refreshToken` | `AuthLoginResponse` | Rotate refresh token and issue new access token | Public |
-| `GET` | `/api/v1/auth/principal` | - | `Principal` | Resolve caller identity and aggregated authority claims | Authenticated |
-| `GET` | `/api/v1/auth/principal/user` | Query `userId` | `Principal` | Internal query to resolve user authorities by UUID | Authenticated |
-| `GET` | `/api/v1/auth/principal/partner` | Headers (`Client-Id`, `Client-Key`) | `Principal` | Authenticate B2B partner via API keys (Cached in Redis) | Public |
+| `GET` | `/api/v1/auth/principal` | `Authorization: Bearer <token>` | `AuthenticatedUser` | Resolve caller identity and aggregated authority claims | Authenticated |
+| `GET` | `/api/v1/auth/principal/user` | Query `userId` | `AuthenticatedUser` | Internal query to resolve user authorities by UUID | Authenticated (Admin) |
+| `GET` | `/api/v1/auth/principal/api-key` | Header `X-API-KEY` | `AuthenticatedUser` | Authenticate user via API Key (Cached in Redis) | Public |
+| `GET` | `/api/v1/auth/principal/client` | Headers `Client-Id`, `Client-Key` | `AuthenticatedUser` | Authenticate user via Client Credentials (Cached in Redis) | Public |
 | `GET` | `/api/v1/auth/jwks.json` | - | `JwksDocument` | RFC 7517 JSON Web Key Set for public key discovery | Public |
 | `GET` | `/.well-known/jwks.json` | - | `JwksDocument` | Standard OIDC well-known JWKS discovery endpoint | Public |
 
@@ -268,14 +269,14 @@ Each RBAC entity supports standard CRUD (`GET`, `POST`, `POST /get-page`, `GET /
 | **User Groups** | `GET /api/v1/users/{userId}/groups`<br/>`PUT /api/v1/users/{userId}/groups`<br/>`POST /api/v1/users/{userId}/groups/{groupId}`<br/>`DELETE /api/v1/users/{userId}/groups/{groupId}` | Manage user group memberships. |
 | **User Resources** | `GET /api/v1/users/{userId}/resources`<br/>`PUT /api/v1/users/{userId}/resources`<br/>`POST /api/v1/users/{userId}/resources/{resourceId}`<br/>`DELETE /api/v1/users/{userId}/resources/{resourceId}` | Direct resource authorizations on specific users. |
 
-### 4.6 Partner Management (`/api/v1/partners`)
-Multi-tenant B2B partner registration, credential rotation, and tenant isolation:
-- `GET /api/v1/partners`
-- `POST /api/v1/partners/get-page`
-- `GET /api/v1/partners/{id}`
-- `POST /api/v1/partners` (Generates unique `Client-Id` and hashed `Client-Key`)
-- `PUT /api/v1/partners/{id}`
-- `DELETE /api/v1/partners/{id}`
+### 4.6 API Key Management (`/api/v1/api-keys`)
+Dedicated lifecycle management for user API credentials (separate from Auth and Principal controllers):
+- `GET /api/v1/api-keys/my` (List all API keys belonging to the current caller with masked keys)
+- `POST /api/v1/api-keys` (Issue a new API key with descriptive name and expiration; returns unmasked secrets once)
+- `GET /api/v1/api-keys/{id}` (Get details of an API key by ID)
+- `DELETE /api/v1/api-keys/{id}` (Revoke an API key immediately and invalidate cache)
+- `POST /api/v1/api-keys/{id}/rotate` (Rotate key credentials, invalidating old key and returning new secret once)
+- `POST /api/v1/api-keys/get-page` (Admin paginated query across all system API keys)
 
 ### 4.7 Enterprise Organization Hierarchy
 Hierarchical organizational node management supporting enterprise corporate structures:

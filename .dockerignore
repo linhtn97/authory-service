@@ -1,7 +1,8 @@
-# Ignore Gradle build output
-build/
+# Ignore Gradle build output (except extracted layers or jar)
+build/*
+!build/extracted/
+!build/libs/
 .gradle/
-!build/libs/*.jar
 
 # Ignore logs
 *.log

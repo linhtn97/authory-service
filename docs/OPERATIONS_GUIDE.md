@@ -10,28 +10,50 @@ This guide covers deployment, containerization, environment configuration, datab
 
 ### 2.1 Multi-Stage Dockerfile
 
-The service includes an optimized multi-stage `Dockerfile` built on **Eclipse Temurin JDK 25 Alpine**:
+The service includes an optimized multi-stage `Dockerfile` built on **Eclipse Temurin JDK 25** (builder) and **Eclipse Temurin JRE 25** (runtime):
 
 ```dockerfile
-# Stage 1: Build & Package
-FROM eclipse-temurin:25-jdk-alpine AS builder
-WORKDIR /app
+# syntax=docker/dockerfile:1.4
+
+# Stage 1: Build stage with Eclipse Temurin JDK 25
+FROM eclipse-temurin:25-jdk AS builder
+WORKDIR /workspace
+
+ARG NEXUS_URL=http://host.docker.internal:8081/repository/maven-public/
+ARG NEXUS_USERNAME=admin
+ARG NEXUS_PASSWORD=admin123
+ENV NEXUS_URL=${NEXUS_URL} NEXUS_USERNAME=${NEXUS_USERNAME} NEXUS_PASSWORD=${NEXUS_PASSWORD}
+
+RUN apt-get update && apt-get install -y --no-install-recommends dos2unix \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY gradlew .
 COPY gradle/ gradle/
-COPY gradlew build.gradle settings.gradle ./
+COPY build.gradle settings.gradle gradle.properties* ./
+RUN dos2unix gradlew && chmod +x gradlew
 RUN ./gradlew dependencies --no-daemon || true
+
 COPY src/ src/
 RUN ./gradlew bootJar -x test --no-daemon
 
-# Stage 2: Minimal Runtime
-FROM eclipse-temurin:25-jre-alpine
+# Stage 2: Runtime Image with Eclipse Temurin JRE 25 (Minimal footprint)
+FROM eclipse-temurin:25-jre
 WORKDIR /app
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-USER appuser
-COPY --from=builder /app/build/libs/authory-service-*.jar app.jar
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd -r spring && useradd -r -g spring spring \
+    && mkdir -p /app/logs && chown -R spring:spring /app
+USER spring:spring
+
+COPY --from=builder --chown=spring:spring /workspace/build/libs/authory-service-0.0.1-SNAPSHOT.jar /app/app.jar
 
 EXPOSE 8600
-ENV JAVA_OPTS="-XX:+UseZGC -XX:+ZGenerational -XX:MaxRAMPercentage=75.0"
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseZGC -Djava.security.egd=file:/dev/./urandom"
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:8600/actuator/health || exit 1
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
 ```
 
 ### 2.2 Docker Compose (`docker-compose.yml`)
@@ -78,12 +100,13 @@ All settings in `src/main/resources/application.yaml` strictly adhere to the 12-
 The database lifecycle is fully governed by **Flyway Database Migrations**:
 
 - **Location:** `classpath:db/migration`
-- **Managed Schemas:** `public, auth, partner, organization, rbac, abac`
+- **Managed Schemas:** `public, auth, organization, rbac, abac`
 - **Migration Scripts:**
   - `V1__init_enterprise_schemas.sql`: 5 schemas, 25 tables, primary keys, foreign keys, unique constraints, and indexes.
   - `V2__seed_default_roles_and_admin.sql`: Default system roles (`SUPER_ADMIN`, `ADMIN`, `USER`), default system resources, and full permission grants.
   - `V3__enterprise_iam_features.sql`: Adds account lockout fields, MFA secrets, active device session metadata, and password reset token tracking.
   - `V4__add_optimistic_locking_version.sql`: Adds version column for JPA Optimistic Locking across all 27 tables.
+  - `V6__migrate_partner_to_user_credentials.sql`: Drops partner schema and tables; creates `auth.api_credentials` referencing `auth.users(id)`.
 
 ### Connection Pool Configuration (HikariCP)
 - **Pool Name:** `AuthoryHikariPool`

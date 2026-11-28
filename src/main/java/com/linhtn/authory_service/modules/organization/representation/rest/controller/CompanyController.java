@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.linhtn.authory_service.modules.organization.application.port.in.CompanyCreateUseCase;
@@ -29,6 +28,7 @@ import com.linhtn.authory_service.modules.organization.representation.rest.dto.r
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.CompanyGetResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.dto.response.CompanyUpdateResponse;
 import com.linhtn.authory_service.modules.organization.representation.rest.mapper.CompanyRestMapper;
+import com.linhtn.security_core.annotation.RequireRole;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
 import com.linhtn.sharedkernel.query.FieldOrder;
@@ -43,6 +43,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Organization - Companies", description = "Company organizational nodes")
 @SecurityRequirement(name = "BearerAuth")
 @RestController
+@RequireRole({"ADMIN", "SUPER_ADMIN"})
 @RequestMapping("/api/v1/companies")
 public class CompanyController {
 
@@ -69,7 +70,7 @@ public class CompanyController {
             summary = "Query companies with params",
             description = "Simple paginated list of companies.")
     @GetMapping
-    public PagingResponse<CompanyGetResponse> getPage(
+    public ResponseEntity<PagingResponse<CompanyGetResponse>> getPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(required = false) String sortBy,
@@ -90,7 +91,8 @@ public class CompanyController {
         }
 
         request.setQuickFilter(search);
-        return CompanyRestMapper.toGetResponse(companyGetPageUseCase.execute(request));
+        return ResponseEntity.ok(
+                CompanyRestMapper.toGetResponse(companyGetPageUseCase.execute(request)));
     }
 
     @Operation(
@@ -149,9 +151,9 @@ public class CompanyController {
         @ApiResponse(responseCode = "404", description = "Company not found")
     })
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(
+    public ResponseEntity<Void> delete(
             @Parameter(description = "Company UUID", required = true) @PathVariable UUID id) {
         companyDeleteUseCase.execute(id);
+        return ResponseEntity.noContent().build();
     }
 }

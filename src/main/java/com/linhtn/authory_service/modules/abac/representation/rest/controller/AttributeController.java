@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.linhtn.authory_service.modules.abac.application.port.in.AttributeCreateUseCase;
@@ -29,6 +28,7 @@ import com.linhtn.authory_service.modules.abac.representation.rest.dto.response.
 import com.linhtn.authory_service.modules.abac.representation.rest.dto.response.AttributeGetResponse;
 import com.linhtn.authory_service.modules.abac.representation.rest.dto.response.AttributeUpdateResponse;
 import com.linhtn.authory_service.modules.abac.representation.rest.mapper.AttributeRestMapper;
+import com.linhtn.security_core.annotation.RequireRole;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
 import com.linhtn.sharedkernel.query.FieldOrder;
@@ -45,6 +45,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
         description = "Managing dynamic subject, resource, and environment attribute definitions")
 @SecurityRequirement(name = "BearerAuth")
 @RestController
+@RequireRole({"ADMIN", "SUPER_ADMIN"})
 @RequestMapping("/api/v1/attributes")
 public class AttributeController {
 
@@ -71,7 +72,7 @@ public class AttributeController {
             summary = "Query attributes with params",
             description = "Simple paginated list of ABAC attributes.")
     @GetMapping
-    public PagingResponse<AttributeGetResponse> getPage(
+    public ResponseEntity<PagingResponse<AttributeGetResponse>> getPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(required = false) String sortBy,
@@ -92,7 +93,8 @@ public class AttributeController {
         }
 
         request.setQuickFilter(search);
-        return AttributeRestMapper.toGetResponse(attributeGetPageUseCase.execute(request));
+        return ResponseEntity.ok(
+                AttributeRestMapper.toGetResponse(attributeGetPageUseCase.execute(request)));
     }
 
     @Operation(
@@ -152,9 +154,9 @@ public class AttributeController {
         @ApiResponse(responseCode = "404", description = "Attribute not found")
     })
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(
+    public ResponseEntity<Void> delete(
             @Parameter(description = "Attribute UUID", required = true) @PathVariable UUID id) {
         attributeDeleteUseCase.execute(id);
+        return ResponseEntity.noContent().build();
     }
 }

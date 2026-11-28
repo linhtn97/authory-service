@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.linhtn.authory_service.modules.user.application.dto.command.UserCreateCommand;
@@ -36,6 +35,8 @@ import com.linhtn.authory_service.modules.user.representation.rest.dto.response.
 import com.linhtn.authory_service.modules.user.representation.rest.dto.response.UserGetResponse;
 import com.linhtn.authory_service.modules.user.representation.rest.dto.response.UserUpdateResponse;
 import com.linhtn.authory_service.modules.user.representation.rest.mapper.UserRestMapper;
+import com.linhtn.security_core.annotation.RequirePermission;
+import com.linhtn.security_core.annotation.RequireRole;
 import com.linhtn.sharedkernel.pagination.PagingRequest;
 import com.linhtn.sharedkernel.pagination.PagingResponse;
 import com.linhtn.sharedkernel.query.FieldOrder;
@@ -87,7 +88,8 @@ public class UserController {
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @GetMapping
-    public PagingResponse<UserGetResponse> getPage(
+    @RequirePermission("USER:READ")
+    public ResponseEntity<PagingResponse<UserGetResponse>> getPage(
             @Parameter(description = "Page index (0-based)") @RequestParam(defaultValue = "0")
                     int page,
             @Parameter(description = "Page size (default: 20)") @RequestParam(defaultValue = "20")
@@ -116,7 +118,7 @@ public class UserController {
         request.setQuickFilter(search);
 
         PagingResponse<UserGetResult> resultPage = userGetPageUseCase.execute(request);
-        return resultPage.map(UserRestMapper::toGetResponse);
+        return ResponseEntity.ok(resultPage.map(UserRestMapper::toGetResponse));
     }
 
     @Operation(
@@ -128,6 +130,7 @@ public class UserController {
         @ApiResponse(responseCode = "400", description = "Invalid criteria syntax")
     })
     @PostMapping("/get-page")
+    @RequirePermission("USER:READ")
     public ResponseEntity<PagingResponse<UserGetResponse>> getPage(
             @Valid @RequestBody PagingRequest req) {
         PagingResponse<UserGetResult> resultPage = userGetPageUseCase.execute(req);
@@ -142,6 +145,7 @@ public class UserController {
         @ApiResponse(responseCode = "404", description = "User not found")
     })
     @GetMapping("/{id}")
+    @RequirePermission("USER:READ")
     public ResponseEntity<UserGetResponse> get(
             @Parameter(description = "User unique identifier", required = true) @PathVariable
                     UUID id) {
@@ -158,6 +162,7 @@ public class UserController {
         @ApiResponse(responseCode = "409", description = "Username or email collision")
     })
     @PostMapping
+    @RequirePermission("USER:WRITE")
     public ResponseEntity<UserCreateResponse> create(@Valid @RequestBody UserCreateRequest req) {
         UserCreateCommand command = UserRestMapper.toCommand(req);
         UserCreateResult result = userCreateUseCase.execute(command);
@@ -175,6 +180,7 @@ public class UserController {
         @ApiResponse(responseCode = "409", description = "Concurrent modification conflict")
     })
     @PutMapping("/{id}")
+    @RequirePermission("USER:WRITE")
     public ResponseEntity<UserUpdateResponse> update(
             @Parameter(description = "User unique identifier", required = true) @PathVariable
                     UUID id,
@@ -192,12 +198,13 @@ public class UserController {
         @ApiResponse(responseCode = "404", description = "User not found")
     })
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(
+    @RequirePermission("USER:DELETE")
+    public ResponseEntity<Void> delete(
             @Parameter(description = "User unique identifier to delete", required = true)
                     @PathVariable
                     UUID id) {
         userDeleteUseCase.execute(id);
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(
@@ -205,15 +212,16 @@ public class UserController {
             description =
                     "Administratively clears brute-force lockout status and resets failed login counters.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Account unlocked successfully"),
+        @ApiResponse(responseCode = "204", description = "Account unlocked successfully"),
         @ApiResponse(responseCode = "404", description = "User credential not found")
     })
     @PostMapping("/{id}/unlock")
-    @ResponseStatus(HttpStatus.OK)
-    public void unlock(
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
+    public ResponseEntity<Void> unlock(
             @Parameter(description = "User unique identifier to unlock", required = true)
                     @PathVariable
                     UUID id) {
         userUnlockUseCase.execute(id);
+        return ResponseEntity.noContent().build();
     }
 }

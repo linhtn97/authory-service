@@ -3,6 +3,7 @@ package com.linhtn.authory_service.config.security.filter;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -13,8 +14,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -29,22 +28,21 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.linhtn.authory_service.config.security.config.SecurityProperties;
 import com.linhtn.authory_service.config.security.exception.error.AuthError;
-import com.linhtn.authory_service.config.security.model.Principal;
 import com.linhtn.authory_service.config.security.provider.JwtProvider;
-import com.linhtn.authory_service.modules.auth.application.port.in.PartnerAuthenticationUseCase;
 import com.linhtn.authory_service.modules.auth.application.port.in.TokenBlacklistUseCase;
 import com.linhtn.authory_service.modules.auth.application.port.in.UserAuthenticationUseCase;
+import com.linhtn.security_core.model.AuthenticatedUser;
 import com.linhtn.sharedkernel.representation.ApiErrorResponse;
 import com.linhtn.web.i18n.MessageResolver;
 
+import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.ObjectMapper;
 
+@Slf4j
 @Component
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
-    private static final Logger log = LoggerFactory.getLogger(JwtAuthorizationFilter.class);
 
     private final MessageResolver messageResolver;
-    private final PartnerAuthenticationUseCase partnerAuthenticationUseCase;
     private final UserAuthenticationUseCase userAuthenticationUseCase;
     private final JwtProvider jwtProvider;
     private final TokenBlacklistUseCase tokenBlacklistUseCase;
@@ -53,13 +51,11 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
     public JwtAuthorizationFilter(
             MessageResolver messageResolver,
-            PartnerAuthenticationUseCase partnerAuthenticationUseCase,
             UserAuthenticationUseCase userAuthenticationUseCase,
             ObjectMapper objectMapper,
             SecurityProperties securityProperties) {
         this(
                 messageResolver,
-                partnerAuthenticationUseCase,
                 userAuthenticationUseCase,
                 null,
                 null,
@@ -70,14 +66,12 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     @Autowired
     public JwtAuthorizationFilter(
             MessageResolver messageResolver,
-            PartnerAuthenticationUseCase partnerAuthenticationUseCase,
             UserAuthenticationUseCase userAuthenticationUseCase,
             @Autowired(required = false) JwtProvider jwtProvider,
             @Autowired(required = false) TokenBlacklistUseCase tokenBlacklistUseCase,
             ObjectMapper objectMapper,
             SecurityProperties securityProperties) {
         this.messageResolver = messageResolver;
-        this.partnerAuthenticationUseCase = partnerAuthenticationUseCase;
         this.userAuthenticationUseCase = userAuthenticationUseCase;
         this.jwtProvider = jwtProvider;
         this.tokenBlacklistUseCase = tokenBlacklistUseCase;
@@ -87,6 +81,16 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        // If Bearer token or API key credentials are provided, always execute filter to establish
+        // security context
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return false;
+        }
+        if (isApiKeyRequest(request)) {
+            return false;
+        }
+
         String path = request.getRequestURI();
 
         return securityProperties.getWhitelistRoutes().stream()
@@ -98,28 +102,37 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         try {
-            if (isPartnerRequest(request)) {
+            // 1. Handle API Key or Client Credentials authentication
+            if (isApiKeyRequest(request)) {
                 try {
+                    final String apiKey = request.getHeader("X-API-KEY");
                     final String clientId = request.getHeader("Client-Id");
                     final String clientKey = request.getHeader("Client-Key");
                     final String traceId = request.getHeader("Trace-Id");
 
-                    var principal = partnerAuthenticationUseCase.getPrincipal(clientId, clientKey);
+                    AuthenticatedUser user;
+                    if (apiKey != null && !apiKey.isBlank()) {
+                        user = userAuthenticationUseCase.getPrincipalByApiKey(apiKey.trim());
+                    } else {
+                        user =
+                                userAuthenticationUseCase.getPrincipalByClientCredentials(
+                                        clientId, clientKey);
+                    }
 
-                    if (principal == null) {
+                    if (user == null) {
                         setErrorResponse(null, request.getRequestURI(), response);
                         return;
                     }
 
                     MDC.put("traceId", traceId == null ? UUID.randomUUID().toString() : traceId);
-                    MDC.put("partnerId", String.valueOf(principal.id()));
+                    MDC.put("userId", user.getUserId());
 
-                    if (shouldAuthenticate(principal.username())) {
-                        setSecurityAuthentication(principal, request);
+                    if (shouldAuthenticate(user.getUsername())) {
+                        setSecurityAuthentication(user, request);
                     }
                 } catch (Exception e) {
                     log.error(
-                            "Exception during extract partner authentication: {}",
+                            "Exception during extract API key authentication: {}",
                             e.getMessage(),
                             e);
                     setErrorResponse(e.getMessage(), request.getRequestURI(), response);
@@ -130,6 +143,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                 return;
             }
 
+            // 2. Handle JWT Bearer token authentication
             final String authHeader = request.getHeader("Authorization");
 
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -154,12 +168,12 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                     }
                 }
 
-                var principal = userAuthenticationUseCase.getPrincipal(currentToken);
-                if (shouldAuthenticate(principal.username())) {
+                var user = userAuthenticationUseCase.getPrincipal(currentToken);
+                if (shouldAuthenticate(user.getUsername())) {
                     MDC.put("traceId", UUID.randomUUID().toString());
-                    MDC.put("userId", String.valueOf(principal.id()));
+                    MDC.put("userId", user.getUserId());
 
-                    setSecurityAuthentication(principal, request);
+                    setSecurityAuthentication(user, request);
                 }
             } catch (Exception e) {
                 log.error("Exception during token processing: {}", e.getMessage(), e);
@@ -170,43 +184,46 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         } finally {
             MDC.remove("traceId");
-            MDC.remove("partnerId");
             MDC.remove("userId");
             SecurityContextHolder.clearContext();
+            com.linhtn.security_core.context.SecurityContextHolder.clearContext();
         }
     }
 
-    private void setSecurityAuthentication(Principal principal, HttpServletRequest request) {
-        var principalAuthorities = principal.authorities();
-        Collection<GrantedAuthority> authorities = java.util.Collections.emptyList();
-        if (principalAuthorities != null) {
-            authorities =
-                    Stream.of(
-                                    principalAuthorities.roles(),
-                                    principalAuthorities.groups(),
-                                    principalAuthorities.resources(),
-                                    principalAuthorities.permissions())
-                            .filter(java.util.Objects::nonNull)
-                            .flatMap(Set::stream)
-                            .map(SimpleGrantedAuthority::new)
-                            .distinct()
-                            .collect(Collectors.toList());
-        }
+    private void setSecurityAuthentication(AuthenticatedUser user, HttpServletRequest request) {
+        Collection<GrantedAuthority> authorities =
+                Stream.of(
+                                user.getRoles(),
+                                user.getGroups(),
+                                user.getResources(),
+                                user.getPermissions())
+                        .filter(Objects::nonNull)
+                        .flatMap(Set::stream)
+                        .map(SimpleGrantedAuthority::new)
+                        .distinct()
+                        .collect(Collectors.toList());
 
         UsernamePasswordAuthenticationToken authToken =
-                new UsernamePasswordAuthenticationToken(principal, null, authorities);
+                new UsernamePasswordAuthenticationToken(user, null, authorities);
         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authToken);
+
+        // Also ambiently populate platform security context
+        com.linhtn.security_core.context.SecurityContextHolder.setContext(
+                com.linhtn.security_core.context.SecurityContext.of(user));
     }
 
     private String extractTokenFromHeader(String authHeader) {
         return authHeader.substring(7);
     }
 
-    private boolean isPartnerRequest(HttpServletRequest request) {
+    private boolean isApiKeyRequest(HttpServletRequest request) {
+        String apiKey = request.getHeader("X-API-KEY");
+        if (apiKey != null && !apiKey.isBlank()) {
+            return true;
+        }
         String clientId = request.getHeader("Client-Id");
         String clientKey = request.getHeader("Client-Key");
-
         return clientId != null && clientKey != null;
     }
 
@@ -224,8 +241,6 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         apiError.setPath(path);
 
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
-        response.setContentType("application/json");
-
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(objectMapper.writeValueAsString(apiError));
     }

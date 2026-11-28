@@ -21,10 +21,8 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.linhtn.authory_service.config.security.config.SecurityProperties;
-import com.linhtn.authory_service.config.security.model.Principal;
-import com.linhtn.authory_service.config.security.model.PrincipalAuthorities;
-import com.linhtn.authory_service.modules.auth.application.port.in.PartnerAuthenticationUseCase;
 import com.linhtn.authory_service.modules.auth.application.port.in.UserAuthenticationUseCase;
+import com.linhtn.security_core.model.AuthenticatedUser;
 import com.linhtn.web.i18n.MessageResolver;
 
 import tools.jackson.databind.ObjectMapper;
@@ -33,7 +31,6 @@ import tools.jackson.databind.ObjectMapper;
 class JwtAuthorizationFilterTest {
 
     @Mock private MessageResolver i18nHelper;
-    @Mock private PartnerAuthenticationUseCase partnerAuthenticationUseCase;
     @Mock private UserAuthenticationUseCase userAuthenticationUseCase;
     @Mock private ObjectMapper objectMapper;
     @Mock private SecurityProperties securityProperties;
@@ -45,11 +42,7 @@ class JwtAuthorizationFilterTest {
     void setUp() {
         filter =
                 new JwtAuthorizationFilter(
-                        i18nHelper,
-                        partnerAuthenticationUseCase,
-                        userAuthenticationUseCase,
-                        objectMapper,
-                        securityProperties);
+                        i18nHelper, userAuthenticationUseCase, objectMapper, securityProperties);
         SecurityContextHolder.clearContext();
     }
 
@@ -74,19 +67,17 @@ class JwtAuthorizationFilterTest {
         request.addHeader("Authorization", "Bearer valid-token-123");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        PrincipalAuthorities authorities =
-                new PrincipalAuthorities(
-                        Set.of("ROLE_USER"), Set.of("GRP_1"), Set.of(), Set.of("user:read"));
-        Principal principal =
-                new Principal(
-                        UUID.randomUUID(),
-                        "john_doe",
-                        "john@example.com",
-                        "John",
-                        "Doe",
-                        authorities);
+        AuthenticatedUser user =
+                AuthenticatedUser.builder()
+                        .userId(UUID.randomUUID().toString())
+                        .username("john_doe")
+                        .email("john@example.com")
+                        .roles(Set.of("ROLE_USER"))
+                        .groups(Set.of("GRP_1"))
+                        .permissions(Set.of("user:read"))
+                        .build();
 
-        when(userAuthenticationUseCase.getPrincipal("valid-token-123")).thenReturn(principal);
+        when(userAuthenticationUseCase.getPrincipal("valid-token-123")).thenReturn(user);
 
         filter.doFilterInternal(request, response, filterChain);
 
@@ -94,27 +85,48 @@ class JwtAuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("Should authenticate partner when valid client credentials provided")
-    void shouldAuthenticatePartnerWhenClientHeadersPresent() throws ServletException, IOException {
+    @DisplayName("Should authenticate user when valid API key header provided")
+    void shouldAuthenticateUserWhenApiKeyPresent() throws ServletException, IOException {
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/api/v1/partners/profile");
-        request.addHeader("Client-Id", "partner-id-1");
-        request.addHeader("Client-Key", "partner-key-1");
+        request.setRequestURI("/api/v1/users");
+        request.addHeader("X-API-KEY", "ak_12345");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        PrincipalAuthorities authorities =
-                new PrincipalAuthorities(Set.of("ROLE_PARTNER"), Set.of(), Set.of(), Set.of());
-        Principal principal =
-                new Principal(
-                        UUID.randomUUID(),
-                        "partner_client",
-                        "partner@client.com",
-                        "Partner",
-                        "Client",
-                        authorities);
+        AuthenticatedUser user =
+                AuthenticatedUser.builder()
+                        .userId(UUID.randomUUID().toString())
+                        .username("api_user")
+                        .email("api@user.com")
+                        .roles(Set.of("ROLE_USER"))
+                        .build();
 
-        when(partnerAuthenticationUseCase.getPrincipal("partner-id-1", "partner-key-1"))
-                .thenReturn(principal);
+        when(userAuthenticationUseCase.getPrincipalByApiKey("ak_12345")).thenReturn(user);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+    @DisplayName("Should authenticate user when valid client credentials provided")
+    void shouldAuthenticateUserWhenClientHeadersPresent() throws ServletException, IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI("/api/v1/users");
+        request.addHeader("Client-Id", "client-id-1");
+        request.addHeader("Client-Key", "client-key-1");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        AuthenticatedUser user =
+                AuthenticatedUser.builder()
+                        .userId(UUID.randomUUID().toString())
+                        .username("client_user")
+                        .email("client@user.com")
+                        .roles(Set.of("ROLE_USER"))
+                        .build();
+
+        when(userAuthenticationUseCase.getPrincipalByClientCredentials(
+                        "client-id-1", "client-key-1"))
+                .thenReturn(user);
 
         filter.doFilterInternal(request, response, filterChain);
 

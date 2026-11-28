@@ -1,5 +1,6 @@
 package com.linhtn.authory_service.modules.auth.domain.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,4 +20,12 @@ public interface ApiCredentialRepository {
     void delete(UUID id);
 
     Optional<ApiCredential> findByClientIdAndHashedSecret(String clientId, String hashedSecret);
+
+    Optional<ApiCredential> findByApiKey(String apiKey);
+
+    Optional<ApiCredential> findByUserId(UUID userId);
+
+    List<ApiCredential> findAllByUserId(UUID userId);
+
+    Optional<ApiCredential> findByIdAndUserId(UUID id, UUID userId);
 }

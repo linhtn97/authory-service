@@ -39,15 +39,13 @@ spring:
     enabled: true
     baseline-on-migrate: true
     baseline-version: 0
-    schemas: public, auth, partner, organization, rbac, abac
+    schemas: public, auth, organization, rbac, abac
     locations: classpath:db/migration
   cache:
     type: simple
     cache-names:
       - user-authorities
-      - partner-authorities
       - user-principals
-      - partner-principals
       - abac-attributes
       - user-attributes
 
@@ -234,7 +232,7 @@ platform:
     enabled: true
     aop-enabled: true # Enables @RequireRole and @RequirePermission aspect evaluation
     web-resolver-enabled: true # Resolves @CurrentUser AuthenticatedUser in controllers
-    exception-handler-enabled: true # Handles platform security exceptions
+    exception-handler-enabled: false # Handled via GlobalApiExceptionHandler to return ApiErrorResponse
 
   # 8. OpenAPI 3 Contracts & Swagger UI (platform-openapi-core)
   openapi:
@@ -274,8 +272,8 @@ authory-server-impl:
     - /api/v1/auth/forgot-password
     - /api/v1/auth/reset-password
     - /api/v1/auth/refresh-token
-    - /api/v1/auth/principal
-    - /api/v1/auth/principal/partner
+    - /api/v1/auth/principal/api-key
+    - /api/v1/auth/principal/client
     - /api/v1/auth/jwks.json
     - /.well-known/jwks.json
     - /actuator/**

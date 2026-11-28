@@ -20,7 +20,7 @@ Detailed engineering documentation is maintained in the [`docs/`](docs/) directo
 | 🏛️ **[System Architecture](docs/ARCHITECTURE.md)** | Full Hexagonal & DDD architecture guide, layer boundaries, Mermaid diagrams, and workflows |
 | 📐 **[AI Architecture Rules](docs/ai_architecture_rules.md)** | Mandatory directory layouts, layer rules, naming conventions, and coding workflows |
 | 🔌 **[API Guidelines & Integration](docs/API_GUIDELINES.md)** | REST contract standards, CQRS payloads, endpoints catalog, and cURL examples |
-| 🏢 **[Enterprise Design](docs/ENTERPRISE_DESIGN.md)** | Hybrid RBAC + ABAC security model, multi-tenancy, partner integration, and performance design |
+| 🏢 **[Enterprise Design](docs/ENTERPRISE_DESIGN.md)** | Hybrid RBAC + ABAC security model, API key governance, and performance design |
 | 🛠️ **[Developer Guidelines](docs/DEVELOPMENT_GUIDELINES.md)** | Environment setup, Gradle commands, Spotless Google Java Format, and testing standards |
 | 🚀 **[Operations Guide](docs/OPERATIONS_GUIDE.md)** | Docker containerization, Flyway migrations, Actuator probes, HikariCP, and runbooks |
 
@@ -37,7 +37,7 @@ Detailed engineering documentation is maintained in the [`docs/`](docs/) directo
 - **Dynamic ABAC Policy Decision Point (PDP):** Policy engine evaluating subject attributes, resource attributes, environmental context, and dynamic SpEL expressions.
 - **Optimistic Locking & Concurrency Defense:** Centralized `@Version` tracking across all entities and 27 database tables. Automatic translation of concurrent mutation conflicts to `HTTP 409 Conflict`.
 - **Automated Cache Invalidation:** Multi-level caching with `@Cacheable` and automated `@CacheEvict` when user roles, permissions, or groups mutate.
-- **Enterprise Database Migrations (Flyway):** Automated version-controlled DDL migrations across 5 schemas (`auth`, `partner`, `organization`, `rbac`, `abac`).
+- **Enterprise Database Migrations (Flyway):** Automated version-controlled DDL migrations across 5 schemas (`auth`, `organization`, `rbac`, `abac`, `public`).
 - **Distributed Tracing & Rate Limiting:** Platform `tracing-core` (`TracingFilter`, `X-Correlation-Id`, W3C `traceparent` MDC logging) and `ratelimit-redis` sliding-window rate limiting on all sensitive authentication routes.
 - **High Concurrency with Java 25:** Native support for Virtual Threads (`spring.threads.virtual.enabled: true`) enabling high-throughput I/O.
 - **Enterprise Observability:** Spring Boot Actuator with Prometheus metrics (`/actuator/prometheus`) and Kubernetes readiness/liveness health probes.
@@ -51,8 +51,7 @@ Each business capability resides within its own bounded context inside `modules/
 ```text
 src/main/java/com/linhtn/authory_service/modules/
 ├── user/               # User lifecycle, accounts, profile, and account unlock
-├── auth/               # JWT authentication, MFA/2FA, password reset, active device sessions
-├── partner/            # B2B tenant management and partner isolation
+├── auth/               # JWT authentication, API keys, MFA/2FA, password reset, active device sessions
 ├── rbac/               # Roles, Permissions, Resources, Groups, and junction graphs
 ├── abac/               # Dynamic ABAC Policy Decision Point (PDP) and user attributes
 ├── organization/       # Company, Center, Branch, Division, Department, Position
