@@ -15,24 +15,34 @@ import com.linhtn.authory_service.modules.rbac.infrastructure.persistence.jpa.en
 public interface ResourcePermissionJpaRepository
         extends JpaRepository<ResourcePermissionEntity, UUID>,
                 JpaSpecificationExecutor<ResourcePermissionEntity> {
+
     @Query(
-            "SELECT rp.permission.id FROM ResourcePermissionEntity rp WHERE rp.resource.id = :resourceId")
+            """
+        SELECT rp.permissionId
+        FROM ResourcePermissionEntity rp
+        WHERE rp.resourceId = :resourceId
+    """)
     Set<UUID> findPermissionIdsByResourceId(UUID resourceId);
 
     @Query(
-            "SELECT rp.permission.code FROM ResourcePermissionEntity rp WHERE rp.resource.id IN :resourceIds")
+            """
+        SELECT p.code
+        FROM ResourcePermissionEntity rp
+        JOIN PermissionEntity p ON p.id = rp.permissionId
+        WHERE rp.resourceId IN :resourceIds
+    """)
     Set<String> findPermissionCodesByResourceIdIn(Set<UUID> resourceIds);
 
     @Modifying
-    @Query("DELETE FROM ResourcePermissionEntity rp WHERE rp.resource.id = :resourceId")
+    @Query("DELETE FROM ResourcePermissionEntity rp WHERE rp.resourceId = :resourceId")
     void deleteByResourceId(UUID resourceId);
 
     @Modifying
     @Query(
             """
-                DELETE FROM ResourcePermissionEntity rp
-                WHERE rp.resource.id = :resourceId
-                AND rp.permission.id IN :permissionIds
-            """)
+        DELETE FROM ResourcePermissionEntity rp
+        WHERE rp.resourceId = :resourceId
+        AND rp.permissionId IN :permissionIds
+    """)
     void deleteByResourceIdAndPermissionIds(UUID resourceId, Set<UUID> permissionIds);
 }

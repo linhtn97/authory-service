@@ -15,22 +15,29 @@ import com.linhtn.authory_service.modules.rbac.infrastructure.persistence.jpa.en
 public interface RolePermissionJpaRepository
         extends JpaRepository<RolePermissionEntity, UUID>,
                 JpaSpecificationExecutor<RolePermissionEntity> {
-    @Query("SELECT rp.permission.id FROM RolePermissionEntity rp WHERE rp.role.id = :roleId")
+
+    @Query("SELECT rp.permissionId FROM RolePermissionEntity rp WHERE rp.roleId = :roleId")
     Set<UUID> findPermissionIdsByRoleId(UUID roleId);
 
-    @Query("SELECT rp.permission.code FROM RolePermissionEntity rp WHERE rp.role.id IN :roleIds")
+    @Query(
+            """
+        SELECT p.code
+        FROM RolePermissionEntity rp
+        JOIN PermissionEntity p ON p.id = rp.permissionId
+        WHERE rp.roleId IN :roleIds
+    """)
     Set<String> findPermissionCodesByRoleIdIn(Set<UUID> roleIds);
 
     @Modifying
-    @Query("DELETE FROM RolePermissionEntity rp WHERE rp.role.id = :roleId")
+    @Query("DELETE FROM RolePermissionEntity rp WHERE rp.roleId = :roleId")
     void deleteByRoleId(UUID roleId);
 
     @Modifying
     @Query(
             """
-                DELETE FROM RolePermissionEntity rp
-                WHERE rp.role.id = :roleId
-                AND rp.permission.id IN :permissionIds
-            """)
+        DELETE FROM RolePermissionEntity rp
+        WHERE rp.roleId = :roleId
+        AND rp.permissionId IN :permissionIds
+    """)
     void deleteByRoleIdAndPermissionIds(UUID roleId, Set<UUID> permissionIds);
 }

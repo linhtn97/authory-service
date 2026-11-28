@@ -1,6 +1,8 @@
 package com.linhtn.authory_service.modules.rbac.infrastructure.persistence.mapper;
 
+import com.linhtn.authory_service.modules.rbac.domain.model.Group;
 import com.linhtn.authory_service.modules.rbac.domain.model.GroupPermission;
+import com.linhtn.authory_service.modules.rbac.domain.model.Permission;
 import com.linhtn.authory_service.modules.rbac.infrastructure.persistence.jpa.entity.GroupPermissionEntity;
 
 public final class GroupPermissionEntityMapper {
@@ -13,8 +15,14 @@ public final class GroupPermissionEntityMapper {
         }
         return GroupPermission.builder()
                 .id(entity.getId())
-                .group(GroupEntityMapper.toDomain(entity.getGroup()))
-                .permission(PermissionEntityMapper.toDomain(entity.getPermission()))
+                .group(
+                        entity.getGroupId() != null
+                                ? Group.builder().id(entity.getGroupId()).build()
+                                : null)
+                .permission(
+                        entity.getPermissionId() != null
+                                ? Permission.builder().id(entity.getPermissionId()).build()
+                                : null)
                 .version(entity.getVersion())
                 .createdAt(entity.getCreatedAt())
                 .createdBy(entity.getCreatedBy())
@@ -29,8 +37,12 @@ public final class GroupPermissionEntityMapper {
         }
         GroupPermissionEntity entity = new GroupPermissionEntity();
         entity.setId(domain.getId());
-        entity.setGroup(GroupEntityMapper.toEntity(domain.getGroup()));
-        entity.setPermission(PermissionEntityMapper.toEntity(domain.getPermission()));
+        if (domain.getGroup() != null) {
+            entity.setGroupId(domain.getGroup().getId());
+        }
+        if (domain.getPermission() != null) {
+            entity.setPermissionId(domain.getPermission().getId());
+        }
         entity.setVersion(domain.getVersion());
         entity.setCreatedAt(domain.getCreatedAt());
         entity.setCreatedBy(domain.getCreatedBy());

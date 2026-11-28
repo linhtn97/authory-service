@@ -14,7 +14,7 @@ import com.linhtn.authory_service.modules.rbac.infrastructure.persistence.jpa.en
 @Repository
 public interface UserGroupJpaRepository
         extends JpaRepository<UserGroupEntity, UUID>, JpaSpecificationExecutor<UserGroupEntity> {
-    @Query("SELECT ug.group.id FROM UserGroupEntity ug WHERE ug.userId = :userId")
+    @Query("SELECT ug.groupId FROM UserGroupEntity ug WHERE ug.userId = :userId")
     Set<UUID> findGroupIdsByUserId(UUID userId);
 
     @Modifying
@@ -26,7 +26,7 @@ public interface UserGroupJpaRepository
             """
         DELETE FROM UserGroupEntity ug
         WHERE ug.userId = :userId
-        AND ug.group.id IN :groupIds
+        AND ug.groupId IN :groupIds
     """)
     void deleteByUserIdAndGroupIds(UUID userId, Set<UUID> groupIds);
 }

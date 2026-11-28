@@ -16,22 +16,33 @@ public interface GroupPermissionJpaRepository
         extends JpaRepository<GroupPermissionEntity, UUID>,
                 JpaSpecificationExecutor<GroupPermissionEntity> {
 
-    @Query("SELECT gp.permission.id FROM GroupPermissionEntity gp WHERE gp.group.id = :groupId")
+    @Query(
+            """
+        SELECT gp.permissionId
+        FROM GroupPermissionEntity gp
+        WHERE gp.groupId = :groupId
+    """)
     Set<UUID> findPermissionIdsByGroupId(UUID groupId);
 
-    @Query("SELECT gp.permission.code FROM GroupPermissionEntity gp WHERE gp.group.id IN :groupIds")
+    @Query(
+            """
+        SELECT p.code
+        FROM GroupPermissionEntity gp
+        JOIN PermissionEntity p ON p.id = gp.permissionId
+        WHERE gp.groupId IN :groupIds
+    """)
     Set<String> findPermissionCodesByGroupIdIn(Set<UUID> groupIds);
 
     @Modifying
-    @Query("DELETE FROM GroupPermissionEntity gp WHERE gp.group.id = :groupId")
+    @Query("DELETE FROM GroupPermissionEntity gp WHERE gp.groupId = :groupId")
     void deleteByGroupId(UUID groupId);
 
     @Modifying
     @Query(
             """
-                DELETE FROM GroupPermissionEntity gp
-                WHERE gp.group.id = :groupId
-                AND gp.permission.id IN :permissionIds
-            """)
+        DELETE FROM GroupPermissionEntity gp
+        WHERE gp.groupId = :groupId
+        AND gp.permissionId IN :permissionIds
+    """)
     void deleteByGroupIdAndPermissionIds(UUID groupId, Set<UUID> permissionIds);
 }

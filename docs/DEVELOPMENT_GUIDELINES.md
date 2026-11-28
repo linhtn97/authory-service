@@ -36,6 +36,7 @@ Authory Service strictly enforces **Google Java Format** using the Spotless Grad
 - **Line Length:** 100 characters maximum.
 - **Imports:** Alphabetical ordering, no wildcard imports (`import java.util.*` is prohibited).
 - **Lombok Usage:** Use `@Getter`, `@Setter`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor` on Domain and Entity models. Avoid `@Data` on JPA Entities to prevent circular `equals`/`hashCode` and performance regressions.
+- **JPA Entity Relationships:** Strictly **prohibit** `@OneToMany`, `@ManyToOne`, `@OneToOne`, and `@ManyToMany` on JPA entities. Always use raw foreign key IDs (e.g. `UUID roleId`, `UUID permissionId`, `UUID userId`). When joined data is required, use explicit JPQL join queries or combine data in application use case services. This eliminates N+1 query surprises and uncontrolled lazy loading.
 
 ---
 

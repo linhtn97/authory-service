@@ -64,8 +64,16 @@ Authory Service is designed as a **Modular Monolith** using **Hexagonal Architec
 ### 2.4 Infrastructure Layer (`modules/<feature>/infrastructure/`)
 - **Responsibility:** Outbound technical adapters providing persistence, message delivery, and external integrations.
 - **Allowed:** Spring Data JPA, Hibernate, PostgreSQL driver, database entities, connection pools.
+- **Relational Mapping Rule (CRITICAL):**
+  - **Do NOT use relational mapping annotations** (`@OneToMany`, `@ManyToOne`, `@OneToOne`, `@ManyToMany`) on JPA entities.
+  - Entities must store simple foreign key IDs (e.g. `private UUID userId;`, `private UUID roleId;`, `private UUID permissionId;`).
+  - **Rationale:** Prevents JPA N+1 select queries, hidden lazy-loading triggers, and unmanageable cascading lifecycle bugs.
+  - When associated data is needed across tables:
+    - Use explicit SQL/JPQL `JOIN` queries with projection or join fetch in JPA repositories.
+    - Perform data stitching/merging cleanly in Application service / Java code where needed.
 - **STRICTLY PROHIBITED:**
   - Core business decisions or domain workflow orchestration.
+  - `@OneToMany`, `@ManyToOne`, `@OneToOne`, `@ManyToMany` annotations on entities.
 - **Typical Components:**
   - `infrastructure/persistence/jpa/entity/`: Database ORM entities (e.g. `UserEntity`).
   - `infrastructure/persistence/jpa/repository/`: Spring Data JPA interfaces (e.g. `UserJpaRepository`).

@@ -1,5 +1,6 @@
 package com.linhtn.authory_service.modules.rbac.infrastructure.persistence.mapper;
 
+import com.linhtn.authory_service.modules.rbac.domain.model.Resource;
 import com.linhtn.authory_service.modules.rbac.domain.model.UserResource;
 import com.linhtn.authory_service.modules.rbac.infrastructure.persistence.jpa.entity.UserResourceEntity;
 
@@ -14,7 +15,10 @@ public final class UserResourceEntityMapper {
         return UserResource.builder()
                 .id(entity.getId())
                 .userId(entity.getUserId())
-                .resource(ResourceEntityMapper.toDomain(entity.getResource()))
+                .resource(
+                        entity.getResourceId() != null
+                                ? Resource.builder().id(entity.getResourceId()).build()
+                                : null)
                 .version(entity.getVersion())
                 .createdAt(entity.getCreatedAt())
                 .createdBy(entity.getCreatedBy())
@@ -30,7 +34,9 @@ public final class UserResourceEntityMapper {
         UserResourceEntity entity = new UserResourceEntity();
         entity.setId(domain.getId());
         entity.setUserId(domain.getUserId());
-        entity.setResource(ResourceEntityMapper.toEntity(domain.getResource()));
+        if (domain.getResource() != null) {
+            entity.setResourceId(domain.getResource().getId());
+        }
         entity.setVersion(domain.getVersion());
         entity.setCreatedAt(domain.getCreatedAt());
         entity.setCreatedBy(domain.getCreatedBy());

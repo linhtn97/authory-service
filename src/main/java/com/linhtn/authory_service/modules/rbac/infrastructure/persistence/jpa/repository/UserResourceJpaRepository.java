@@ -15,7 +15,7 @@ import com.linhtn.authory_service.modules.rbac.infrastructure.persistence.jpa.en
 public interface UserResourceJpaRepository
         extends JpaRepository<UserResourceEntity, UUID>,
                 JpaSpecificationExecutor<UserResourceEntity> {
-    @Query("SELECT ur.resource.id FROM UserResourceEntity ur WHERE ur.userId = :userId")
+    @Query("SELECT ur.resourceId FROM UserResourceEntity ur WHERE ur.userId = :userId")
     Set<UUID> findResourceIdsByUserId(UUID userId);
 
     @Modifying
@@ -27,7 +27,7 @@ public interface UserResourceJpaRepository
             """
         DELETE FROM UserResourceEntity ur
         WHERE ur.userId = :userId
-        AND ur.resource.id IN :resourceIds
+        AND ur.resourceId IN :resourceIds
     """)
     void deleteByUserIdAndResourceIds(UUID userId, Set<UUID> resourceIds);
 }

@@ -1,5 +1,6 @@
 package com.linhtn.authory_service.modules.rbac.infrastructure.persistence.mapper;
 
+import com.linhtn.authory_service.modules.rbac.domain.model.Role;
 import com.linhtn.authory_service.modules.rbac.domain.model.UserRole;
 import com.linhtn.authory_service.modules.rbac.infrastructure.persistence.jpa.entity.UserRoleEntity;
 
@@ -14,7 +15,10 @@ public final class UserRoleEntityMapper {
         return UserRole.builder()
                 .id(entity.getId())
                 .userId(entity.getUserId())
-                .role(RoleEntityMapper.toDomain(entity.getRole()))
+                .role(
+                        entity.getRoleId() != null
+                                ? Role.builder().id(entity.getRoleId()).build()
+                                : null)
                 .version(entity.getVersion())
                 .createdAt(entity.getCreatedAt())
                 .createdBy(entity.getCreatedBy())
@@ -30,7 +34,9 @@ public final class UserRoleEntityMapper {
         UserRoleEntity entity = new UserRoleEntity();
         entity.setId(domain.getId());
         entity.setUserId(domain.getUserId());
-        entity.setRole(RoleEntityMapper.toEntity(domain.getRole()));
+        if (domain.getRole() != null) {
+            entity.setRoleId(domain.getRole().getId());
+        }
         entity.setVersion(domain.getVersion());
         entity.setCreatedAt(domain.getCreatedAt());
         entity.setCreatedBy(domain.getCreatedBy());

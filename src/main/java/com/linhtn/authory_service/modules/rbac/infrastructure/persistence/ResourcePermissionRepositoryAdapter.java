@@ -9,8 +9,6 @@ import org.springframework.stereotype.Repository;
 import com.linhtn.authory_service.modules.rbac.domain.model.ResourcePermission;
 import com.linhtn.authory_service.modules.rbac.domain.repository.ResourcePermissionRepository;
 import com.linhtn.authory_service.modules.rbac.infrastructure.persistence.jpa.entity.ResourcePermissionEntity;
-import com.linhtn.authory_service.modules.rbac.infrastructure.persistence.jpa.repository.PermissionJpaRepository;
-import com.linhtn.authory_service.modules.rbac.infrastructure.persistence.jpa.repository.ResourceJpaRepository;
 import com.linhtn.authory_service.modules.rbac.infrastructure.persistence.jpa.repository.ResourcePermissionJpaRepository;
 import com.linhtn.authory_service.modules.rbac.infrastructure.persistence.mapper.ResourcePermissionEntityMapper;
 
@@ -18,16 +16,10 @@ import com.linhtn.authory_service.modules.rbac.infrastructure.persistence.mapper
 public class ResourcePermissionRepositoryAdapter implements ResourcePermissionRepository {
 
     private final ResourcePermissionJpaRepository resourcePermissionJpaRepository;
-    private final ResourceJpaRepository resourceJpaRepository;
-    private final PermissionJpaRepository permissionJpaRepository;
 
     public ResourcePermissionRepositoryAdapter(
-            ResourcePermissionJpaRepository resourcePermissionJpaRepository,
-            ResourceJpaRepository resourceJpaRepository,
-            PermissionJpaRepository permissionJpaRepository) {
+            ResourcePermissionJpaRepository resourcePermissionJpaRepository) {
         this.resourcePermissionJpaRepository = resourcePermissionJpaRepository;
-        this.resourceJpaRepository = resourceJpaRepository;
-        this.permissionJpaRepository = permissionJpaRepository;
     }
 
     @Override
@@ -53,20 +45,8 @@ public class ResourcePermissionRepositoryAdapter implements ResourcePermissionRe
 
     @Override
     public ResourcePermission save(ResourcePermission resourcePermission) {
-        ResourcePermissionEntity entity = new ResourcePermissionEntity();
-        entity.setId(resourcePermission.getId());
-        if (resourcePermission.getResource() != null
-                && resourcePermission.getResource().getId() != null) {
-            entity.setResource(
-                    resourceJpaRepository.getReferenceById(
-                            resourcePermission.getResource().getId()));
-        }
-        if (resourcePermission.getPermission() != null
-                && resourcePermission.getPermission().getId() != null) {
-            entity.setPermission(
-                    permissionJpaRepository.getReferenceById(
-                            resourcePermission.getPermission().getId()));
-        }
+        ResourcePermissionEntity entity =
+                ResourcePermissionEntityMapper.toEntity(resourcePermission);
         ResourcePermissionEntity saved = resourcePermissionJpaRepository.save(entity);
         return ResourcePermissionEntityMapper.toDomain(saved);
     }
@@ -74,27 +54,7 @@ public class ResourcePermissionRepositoryAdapter implements ResourcePermissionRe
     @Override
     public List<ResourcePermission> saveAll(List<ResourcePermission> resourcePermissions) {
         List<ResourcePermissionEntity> entities =
-                resourcePermissions.stream()
-                        .map(
-                                rp -> {
-                                    ResourcePermissionEntity entity =
-                                            new ResourcePermissionEntity();
-                                    entity.setId(rp.getId());
-                                    if (rp.getResource() != null
-                                            && rp.getResource().getId() != null) {
-                                        entity.setResource(
-                                                resourceJpaRepository.getReferenceById(
-                                                        rp.getResource().getId()));
-                                    }
-                                    if (rp.getPermission() != null
-                                            && rp.getPermission().getId() != null) {
-                                        entity.setPermission(
-                                                permissionJpaRepository.getReferenceById(
-                                                        rp.getPermission().getId()));
-                                    }
-                                    return entity;
-                                })
-                        .toList();
+                resourcePermissions.stream().map(ResourcePermissionEntityMapper::toEntity).toList();
         return resourcePermissionJpaRepository.saveAll(entities).stream()
                 .map(ResourcePermissionEntityMapper::toDomain)
                 .toList();
